@@ -24,9 +24,7 @@ namespace Experimental.Cables
             {
                 if (_heldObject)
                 {
-                    // Drop object
-                    //var joint = _heldObject.gameObject.AddComponent<FixedJoint>();
-                    //Destroy(joint);
+                    DropObject();
                 }
                 else
                 {
@@ -37,50 +35,30 @@ namespace Experimental.Cables
                         var plug = hitInfo.transform.gameObject.GetComponent<Plug>();
                         if (plug)
                         {
-                            _heldObject = plug;
-                            //_heldObject.GetComponent<Rigidbody>().position = (_camera.transform.position + transform.forward);
-                            //_heldObject.GetComponent<Rigidbody>().useGravity = false;
-                            var heldRigidBody = _heldObject.GetComponent<Rigidbody>();
-                            //Destroy(heldRigidBody);
-
-                            _heldObject.GetComponent<Collider>().isTrigger = true;
-
-
-                            heldRigidBody.useGravity = false;
-                            heldRigidBody.isKinematic = true;
-
-                            //heldRigidBody.position = Hand.transform.position;
-                            //heldRigidBody.rotation = Hand.transform.rotation;
-
-                            _heldObject.transform.position = Hand.transform.position;
-                            _heldObject.transform.rotation = Hand.transform.rotation;
-
-                            //heldRigidBody.MoveRotation(Hand.transform.rotation);
-                            //heldRigidBody.MovePosition(Hand.transform.position);
-
-                            _heldObject.transform.SetParent(Hand.transform);
-
-
-                            //_heldObject.transform.Translate(Hand.transform.position, Space.World);
-
-
-
-                            //_heldObject.transform.localPosition = Vector3.zero;
-                            //heldRigidBody.velocity = Vector3.zero;
-
-
-                            //_heldObject.transform.localPosition = Vector3.zero;
-                            //_heldObject.transform.rotation = Quaternion.identity;
-                            //_heldObject.transform.parent = _camera
-                            //var joint = _heldObject.gameObject.AddComponent<FixedJoint>();
-                            //joint.connectedBody = _camera.GetComponent<Rigidbody>();
-                            //joint.enableCollision = false;
-                            //joint.enablePreprocessing = false;
-
+                            PickupObject(plug);
                         }
                     }
                 }
             }
+        }
+
+        private void PickupObject(Plug plug)
+        {
+            _heldObject = plug;
+
+            _heldObject.Pickup();
+
+            _heldObject.transform.position = Hand.transform.position;
+            _heldObject.transform.rotation = Hand.transform.rotation;
+
+            _heldObject.transform.SetParent(Hand.transform);
+        }
+
+        private void DropObject()
+        {
+            _heldObject.Drop();
+            _heldObject.transform.SetParent(null);
+            _heldObject = null;
         }
 
         private void OnDestroy()
