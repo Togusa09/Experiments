@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum VoxelType
+namespace Experimental.Voxel
 {
-    Air,
-    Ground
-}
+    public enum VoxelType
+    {
+        Air,
+        Ground
+    }
 
-public struct VoxelBlock
-{
-    public VoxelType VoxelType;
+    public struct VoxelBlock
+    {
+        public VoxelType VoxelType;
+    }
 }
