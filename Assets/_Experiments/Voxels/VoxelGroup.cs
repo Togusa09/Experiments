@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Experimental.Voxel
@@ -14,9 +15,7 @@ namespace Experimental.Voxel
         // Start is called before the first frame update
         void Start()
         {
-            var meshVertices = new List<Vector3>();
-            var meshTriangles = new List<int>();
-            var meshUVs = new List<Vector2>();
+
 
             for (var x = 0; x < 10; x++)
             {
@@ -28,6 +27,15 @@ namespace Experimental.Voxel
                 Voxels[0, 0, z].VoxelType = VoxelType.Ground;
                 Voxels[9, 0, z].VoxelType = VoxelType.Ground;
             }
+
+            CalculateMesh();
+        }
+
+        private void CalculateMesh()
+        {
+            var meshVertices = new List<Vector3>();
+            var meshTriangles = new List<int>();
+            var meshUVs = new List<Vector2>();
 
             for (var x = 0; x < 10; x++)
             {
@@ -65,6 +73,28 @@ namespace Experimental.Voxel
             GetComponent<MeshCollider>().sharedMesh = mesh;
         }
 
+        internal void Add(Vector3 voxelPos)
+        {
+            SetPoint(voxelPos, VoxelType.Ground);
+        }
+
+        internal void Remove(Vector3 voxelPos)
+        {
+            SetPoint(voxelPos, VoxelType.Air);
+        }
+
+        private void SetPoint(Vector3 position, VoxelType type)
+        {
+            var x = (int)position.x;
+            var y = (int)position.y;
+            var z = (int)position.z;
+
+            Voxels[x, y, z].VoxelType = type;
+
+            CalculateMesh();
+        }
+
+
         private static Vector2[] GetUVs()
         {
             return new Vector2[] {
@@ -99,6 +129,7 @@ namespace Experimental.Voxel
                             new Vector2(1, 0),
                         };
         }
+
 
         private static int[] GetTriangles(int offset = 0)
         {
