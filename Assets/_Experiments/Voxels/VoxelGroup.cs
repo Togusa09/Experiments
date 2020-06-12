@@ -4,35 +4,30 @@ using UnityEngine;
 
 namespace Experimental.Voxel
 {
+
+
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
-
     public class VoxelGroup : MonoBehaviour
     {
         public VoxelBlock[,,] Voxels = new VoxelBlock[10, 10, 10];
 
+        private bool _recalculateMesh = true;
+
+        public string Id { get;  set; }
 
         // Start is called before the first frame update
         void Start()
         {
 
 
-            for (var x = 0; x < 10; x++)
-            {
-                Voxels[x, 0, 0].VoxelType = VoxelType.Ground;
-                Voxels[x, 0, 9].VoxelType = VoxelType.Ground;
-            }
-            for (var z = 0; z < 10; z++)
-            {
-                Voxels[0, 0, z].VoxelType = VoxelType.Ground;
-                Voxels[9, 0, z].VoxelType = VoxelType.Ground;
-            }
-
-            CalculateMesh();
+           
         }
 
         private void CalculateMesh()
         {
+            if (!_recalculateMesh) return;
+
             var meshVertices = new List<Vector3>();
             var meshTriangles = new List<int>();
             var meshUVs = new List<Vector2>();
@@ -71,6 +66,17 @@ namespace Experimental.Voxel
 
             GetComponent<MeshFilter>().mesh = mesh;
             GetComponent<MeshCollider>().sharedMesh = mesh;
+        }
+
+        internal void ResumeMeshRecalcuation()
+        {
+            _recalculateMesh = true;
+            CalculateMesh();
+        }
+
+        internal void PauseMeshRecalcuation()
+        {
+            _recalculateMesh = false;
         }
 
         internal void Add(Vector3 voxelPos)
