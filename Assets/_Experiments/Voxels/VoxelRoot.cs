@@ -13,11 +13,19 @@ public static class VoxelPointHelper
         var relativeLocation = location - voxelGroupPosition;
 
         var voxelPosition = new Vector3Int(
-            (int)relativeLocation.x - (relativeLocation.x < 0 ? 1 : 0),
-            (int)relativeLocation.y - (relativeLocation.y < 0 ? 1 : 0),
-            (int)relativeLocation.z - (relativeLocation.z < 0 ? 1 : 0));
+                HandleNegatives(relativeLocation.x),
+                HandleNegatives(relativeLocation.y),
+                HandleNegatives(relativeLocation.z)
+            );
 
         return voxelPosition;
+    }
+
+    private static int HandleNegatives(float val)
+    {
+        if (val >= 0) return (int)val;
+
+        return (int)(10.0f - val);
     }
 
     public static Vector3 PointToCubeRemoveLocation(RaycastHit hit)
@@ -26,10 +34,11 @@ public static class VoxelPointHelper
         var voxelGroupPosition = hit.transform.position;
         var relativeLocation = location - voxelGroupPosition;
 
-        var voxelPosition = new Vector3(
-            (int)relativeLocation.x - (relativeLocation.x < 0 ? 1 : 0),
-            (int)relativeLocation.y - (relativeLocation.y < 0 ? 1 : 0),
-            (int)relativeLocation.z - (relativeLocation.z < 0 ? 1 : 0));
+        var voxelPosition = new Vector3Int(
+               HandleNegatives((int)relativeLocation.x),
+               HandleNegatives((int)relativeLocation.y),
+               HandleNegatives((int)relativeLocation.z)
+           );
 
         return voxelPosition;
     }
@@ -83,36 +92,45 @@ public class VoxelRoot : MonoBehaviour
 
     private void PlayerClick(RaycastHit hitInfo, int buttonId)
     {
-        var voxelPos = VoxelPointHelper.PointToCubePlaceLocation(hitInfo);
+        Vector3 targetPoint = Vector3.zero;
+        switch (buttonId)
+        {
+            case 0:
+                targetPoint = hitInfo.point + hitInfo.normal * 0.5f;
+                break;
+            case 1:
+                targetPoint = hitInfo.point - hitInfo.normal * 0.5f;
+                break;
+        }
+
+
         var hitVoxelGroup = hitInfo.transform.GetComponent<VoxelGroup>();
+
+        var calc = new VoxelCoordinateCalculator();
+        var voxelId = calc.CalculateId(targetPoint);
 
         VoxelGroup voxelGroup;
 
-        if (IsInCube(voxelPos)) // Is targetted voxel
+        if (voxelId.VoxelGroupId == hitVoxelGroup.Id)
         {
-            voxelGroup = GetOrCreateVoxelGroup(hitVoxelGroup.Id);
+            voxelGroup = hitVoxelGroup;
         }
-        else // Needs to find other voxel
+        else
         {
-            var hitVoxelLocation = GetPointForId(hitVoxelGroup.Id);
-            var targetVoxelId = GetIdForPoint(hitVoxelLocation + voxelPos);
-            voxelGroup = GetOrCreateVoxelGroup(targetVoxelId);
-            // Messy, should move into voxel
-            voxelPos = new Vector3Int(voxelPos.x % 10, voxelPos.y % 10, voxelPos.z % 10);
+            voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
         }
 
 
+        Debug.Log($"Hit: {targetPoint}, Id: {voxelId.VoxelLocalPosition}, Local: {voxelId.VoxelLocalPosition}");
 
-        //
-        //var voxelId = GetIdForPoint(voxelPos);
-        
+        Debug.Log(voxelGroup.Id);
+        Debug.Log(voxelId.VoxelLocalPosition);
 
         if (buttonId == 0)
         {
-            //var voxelGroup = hitInfo.transform.GetComponent<VoxelGroup>();
+            var voxelPos = voxelId.VoxelLocalPosition;
 
-            
-            
+
             if (voxelPos.x >= 0 && voxelPos.x < 10
                 && voxelPos.y >= 0 && voxelPos.y < 10
                 && voxelPos.z >= 0 && voxelPos.z < 10)
@@ -123,7 +141,8 @@ public class VoxelRoot : MonoBehaviour
 
         if (buttonId == 1)
         {
-            //var voxelGroup = hitInfo.transform.GetComponent<VoxelGroup>();
+            var voxelPos = voxelId.VoxelLocalPosition;
+
             if (voxelPos.x >= 0 && voxelPos.x < 10
                 && voxelPos.y >= 0 && voxelPos.y < 10
                 && voxelPos.z >= 0 && voxelPos.z < 10)
@@ -148,9 +167,9 @@ public class VoxelRoot : MonoBehaviour
 
     private string GetIdForPoint(Vector3Int point)
     {
-        var x = point.x / 10;
-        var y = point.y / 10;
-        var z = point.z / 10;
+        var x = (point.x / 10) - (point.x < 0 ? 1 : 0);
+        var y = (point.y / 10) - (point.y < 0 ? 1 : 0);
+        var z = (point.z / 10) - (point.z < 0 ? 1 : 0);
 
         return $"{x}|{y}|{z}";
     }
@@ -158,7 +177,10 @@ public class VoxelRoot : MonoBehaviour
     private Vector3Int GetPointForId(string id)
     {
         var t = id.Split(new[] { '|' });
-        return new Vector3Int(int.Parse(t[0]) * 10, int.Parse(t[1]) * 10, int.Parse(t[2]) * 10);
+        var x = int.Parse(t[0]);
+        var y = int.Parse(t[1]);
+        var z = int.Parse(t[2]);
+
+        return new Vector3Int(x * 10, y * 10, z * 10);
     }
-   
 }
