@@ -7,7 +7,8 @@ namespace Experimental.Voxel
     public enum VoxelType
     {
         Air,
-        Ground
+        Ground,
+        Grass
     }
 
     public struct VoxelBlock

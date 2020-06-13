@@ -44,7 +44,6 @@ namespace Experimental.Voxel
                 hasTarget = false;
             }
 
-
             LineRenderer lr = GetComponent<LineRenderer>();
 
             lr.SetPosition(0, transform.position + transform.right * 0.2f + transform.up * -0.1f);

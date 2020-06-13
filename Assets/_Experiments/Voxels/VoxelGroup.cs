@@ -4,24 +4,26 @@ using UnityEngine;
 
 namespace Experimental.Voxel
 {
-
-
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
     public class VoxelGroup : MonoBehaviour
     {
         public VoxelBlock[,,] Voxels = new VoxelBlock[10, 10, 10];
+        
 
         private bool _recalculateMesh = true;
-
+        private Dictionary<VoxelType, Vector2> textureUvs = new Dictionary<VoxelType, Vector2>()
+        {
+            { VoxelType.Ground, new Vector2(0, 0) },
+            { VoxelType.Grass, new Vector2(0.5f, 0) }
+        };
+        
         public string Id { get;  set; }
 
         // Start is called before the first frame update
         void Start()
         {
-
-
-           
+                       
         }
 
         private void CalculateMesh()
@@ -48,7 +50,7 @@ namespace Experimental.Voxel
                             Vector3[] vertices = GetVerticesForPosition(new Vector3(x, y, z));
                             meshVertices.AddRange(vertices);
 
-                            Vector2[] uvs = GetUVs();
+                            Vector2[] uvs = GetUVs(currentVoxel.VoxelType);
                             meshUVs.AddRange(uvs);
                         }
                     }
@@ -79,9 +81,9 @@ namespace Experimental.Voxel
             _recalculateMesh = false;
         }
 
-        internal void Add(Vector3 voxelPos)
+        internal void Add(Vector3 voxelPos, VoxelType voxelType)
         {
-            SetPoint(voxelPos, VoxelType.Ground);
+            SetPoint(voxelPos, voxelType);
         }
 
         internal void Remove(Vector3 voxelPos)
@@ -101,38 +103,42 @@ namespace Experimental.Voxel
         }
 
 
-        private static Vector2[] GetUVs()
+        private Vector2[] GetUVs(VoxelType voxelType)
         {
+            var uvOrigin = textureUvs[voxelType];
+            var textureSize = 0.5f;
+
+
             return new Vector2[] {
-                            new Vector2(0, 1),
-                            new Vector2(0, 0),
-                            new Vector2(1, 1),
-                            new Vector2(1, 0),
+                            uvOrigin + new Vector2(0, textureSize),
+                            uvOrigin, //new Vector2(0, 0),
+                            uvOrigin + new Vector2(textureSize, textureSize),
+                            uvOrigin + new Vector2(textureSize, 0),
 
-                            new Vector2(0, 1),
-                            new Vector2(0, 0),
-                            new Vector2(1, 1),
-                            new Vector2(1, 0),
+                            uvOrigin + new Vector2(0, textureSize),
+                            uvOrigin,
+                            uvOrigin + new Vector2(textureSize, textureSize),
+                            uvOrigin + new Vector2(textureSize, 0),
 
-                            new Vector2(0, 1),
-                            new Vector2(0, 0),
-                            new Vector2(1, 1),
-                            new Vector2(1, 0),
+                            uvOrigin + new Vector2(0, textureSize),
+                            uvOrigin,
+                            uvOrigin + new Vector2(textureSize, textureSize),
+                            uvOrigin + new Vector2(textureSize, 0),
 
-                            new Vector2(0, 1),
-                            new Vector2(0, 0),
-                            new Vector2(1, 1),
-                            new Vector2(1, 0),
+                            uvOrigin + new Vector2(0, textureSize),
+                            uvOrigin,
+                            uvOrigin + new Vector2(textureSize, textureSize),
+                            uvOrigin + new Vector2(textureSize, 0),
 
-                            new Vector2(0, 1),
-                            new Vector2(0, 0),
-                            new Vector2(1, 1),
-                            new Vector2(1, 0),
+                            uvOrigin + new Vector2(0, textureSize),
+                            uvOrigin,
+                            uvOrigin + new Vector2(textureSize, textureSize),
+                            uvOrigin + new Vector2(textureSize, 0),
 
-                            new Vector2(0, 1),
-                            new Vector2(0, 0),
-                            new Vector2(1, 1),
-                            new Vector2(1, 0),
+                            uvOrigin + new Vector2(0, textureSize),
+                            uvOrigin,
+                            uvOrigin + new Vector2(textureSize, textureSize),
+                            uvOrigin + new Vector2(textureSize, 0),
                         };
         }
 
@@ -209,6 +215,11 @@ namespace Experimental.Voxel
                                 //new Vector3(position.x + 1,  position.y + 1,  position.z + 1),
                                 //new Vector3(position.x,      position.y + 1,  position.z + 1),
                             };
+        }
+
+        private void Update()
+        {
+           
         }
     }
 }

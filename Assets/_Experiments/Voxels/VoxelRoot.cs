@@ -1,53 +1,12 @@
 ﻿using Experimental.Voxel;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SocialPlatforms;
-
-public static class VoxelPointHelper
-{
-    public static Vector3Int PointToCubePlaceLocation(RaycastHit hit)
-    {
-        var location = hit.point + hit.normal * 0.5f;
-        var voxelGroupPosition = hit.transform.position;
-        var relativeLocation = location - voxelGroupPosition;
-
-        var voxelPosition = new Vector3Int(
-                HandleNegatives(relativeLocation.x),
-                HandleNegatives(relativeLocation.y),
-                HandleNegatives(relativeLocation.z)
-            );
-
-        return voxelPosition;
-    }
-
-    private static int HandleNegatives(float val)
-    {
-        if (val >= 0) return (int)val;
-
-        return (int)(10.0f - val);
-    }
-
-    public static Vector3 PointToCubeRemoveLocation(RaycastHit hit)
-    {
-        var location = hit.point - hit.normal * 0.5f;
-        var voxelGroupPosition = hit.transform.position;
-        var relativeLocation = location - voxelGroupPosition;
-
-        var voxelPosition = new Vector3Int(
-               HandleNegatives((int)relativeLocation.x),
-               HandleNegatives((int)relativeLocation.y),
-               HandleNegatives((int)relativeLocation.z)
-           );
-
-        return voxelPosition;
-    }
-}
 
 public class VoxelRoot : MonoBehaviour
 {
     public Player Player;
     public VoxelGroup VoxelGroupPrefab;
+    private VoxelType _currentVoxelType = VoxelType.Ground;
 
     Dictionary<string, VoxelGroup> VoxelGroups = new Dictionary<string, VoxelGroup>();
 
@@ -62,13 +21,13 @@ public class VoxelRoot : MonoBehaviour
 
         for (var x = 0; x < 10; x++)
         {
-            voxelGroup.Add(new Vector3(x, 0, 0));
-            voxelGroup.Add(new Vector3(x, 0, 9));
+            voxelGroup.Add(new Vector3(x, 0, 0), VoxelType.Ground);
+            voxelGroup.Add(new Vector3(x, 0, 9), VoxelType.Ground);
         }
         for (var z = 0; z < 10; z++)
         {
-            voxelGroup.Add(new Vector3(0, 0, z));
-            voxelGroup.Add(new Vector3(9, 0, z));
+            voxelGroup.Add(new Vector3(0, 0, z), VoxelType.Ground);
+            voxelGroup.Add(new Vector3(9, 0, z), VoxelType.Ground);
         }
         voxelGroup.ResumeMeshRecalcuation();
 
@@ -77,6 +36,37 @@ public class VoxelRoot : MonoBehaviour
         VoxelGroups[voxelId] = voxelGroup;
 
         Player.OnPlayerClick += PlayerClick;
+    }
+
+    private void Update()
+    {
+        if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
+        {
+            switch (_currentVoxelType)
+            {
+                case VoxelType.Ground:
+                    _currentVoxelType = VoxelType.Grass;
+                    break;
+                case VoxelType.Grass:
+                    _currentVoxelType = VoxelType.Ground;
+                    break;
+            }
+
+            Debug.Log(_currentVoxelType);
+        }
+        else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
+        {
+            switch (_currentVoxelType)
+            {
+                case VoxelType.Ground:
+                    _currentVoxelType = VoxelType.Grass;
+                    break;
+                case VoxelType.Grass:
+                    _currentVoxelType = VoxelType.Ground;
+                    break;
+            }
+            Debug.Log(_currentVoxelType);
+        }
     }
 
     private bool IsInCube(Vector3Int val)
@@ -135,7 +125,7 @@ public class VoxelRoot : MonoBehaviour
                 && voxelPos.y >= 0 && voxelPos.y < 10
                 && voxelPos.z >= 0 && voxelPos.z < 10)
             {
-                voxelGroup.Add(voxelPos);
+                voxelGroup.Add(voxelPos, _currentVoxelType);
             }
         }
 
