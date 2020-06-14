@@ -36,6 +36,9 @@ public class VoxelCoordinateCalculator
     private int HandleNegativesForVoxel(float val)
     {
         if (val >= 0) return Mathf.FloorToInt(val);
+
+        if (val % -10 == 0) return (int)val - 10;
+
         return Mathf.FloorToInt(val);
     }
 
@@ -43,6 +46,8 @@ public class VoxelCoordinateCalculator
     private int HandleNegativesForGroup(float val)
     {
         if (val >= 0) return (int)(val / 10);
+
+        
 
         return (int)(val / 10) - 1;
     }

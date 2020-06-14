@@ -15,28 +15,49 @@ public class VoxelRoot : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        var voxelGroup = Instantiate(VoxelGroupPrefab, transform.position, Quaternion.identity, transform);
+        //var voxelGroup = Instantiate(VoxelGroupPrefab, transform.position, Quaternion.identity, transform);
 
-        voxelGroup.PauseMeshRecalcuation();
+        //voxelGroup.PauseMeshRecalcuation();
 
-        for (var x = 0; x < 10; x++)
-        {
-            voxelGroup.Add(new Vector3(x, 0, 0), VoxelType.Ground);
-            voxelGroup.Add(new Vector3(x, 0, 9), VoxelType.Ground);
-        }
-        for (var z = 0; z < 10; z++)
-        {
-            voxelGroup.Add(new Vector3(0, 0, z), VoxelType.Ground);
-            voxelGroup.Add(new Vector3(9, 0, z), VoxelType.Ground);
-        }
-        voxelGroup.ResumeMeshRecalcuation();
+        //for (var x = 0; x < 10; x++)
+        //{
+        //    voxelGroup.Add(new Vector3(x, 0, 0), VoxelType.Ground);
+        //    voxelGroup.Add(new Vector3(x, 0, 9), VoxelType.Ground);
+        //}
+        //for (var z = 0; z < 10; z++)
+        //{
+        //    voxelGroup.Add(new Vector3(0, 0, z), VoxelType.Ground);
+        //    voxelGroup.Add(new Vector3(9, 0, z), VoxelType.Ground);
+        //}
+        //voxelGroup.ResumeMeshRecalcuation();
 
-        var voxelId = GetIdForPoint(new Vector3Int(0, 0, 0));
-        voxelGroup.Id = voxelId;
-        VoxelGroups[voxelId] = voxelGroup;
+        //var voxelId = GetIdForPoint(new Vector3Int(0, 0, 0));
+        //voxelGroup.Id = voxelId;
+        //VoxelGroups[voxelId] = voxelGroup;
+        SeedEnvironment();
 
         Player.OnPlayerClick += PlayerClick;
     }
+
+    private void SeedEnvironment()
+    {
+        var calc = new VoxelCoordinateCalculator();
+        var scale = 1.0f;
+        for (var x = -100; x < 100; x++)
+        {
+            for (var z = -100; z < 100; z++)
+            {
+                float xCoord = 1566f + x / 20f * scale;
+                float zCoord = 5000f + z / 20f * scale;
+
+                var y = Mathf.PerlinNoise(xCoord, zCoord) * 9;
+                var voxelId = calc.CalculateId(new Vector3(x + 0.1f, y + 0.1f, z));
+                var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
+                voxelGroup.Add(voxelId.VoxelLocalPosition, VoxelType.Ground);
+            }
+        }
+    }
+
 
     private void Update()
     {
