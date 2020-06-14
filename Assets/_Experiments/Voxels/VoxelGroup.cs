@@ -15,7 +15,8 @@ namespace Experimental.Voxel
         private Dictionary<VoxelType, Vector2> textureUvs = new Dictionary<VoxelType, Vector2>()
         {
             { VoxelType.Ground, new Vector2(0, 0) },
-            { VoxelType.Grass, new Vector2(0.5f, 0) }
+            { VoxelType.Grass, new Vector2(0.25f, 0) },
+            { VoxelType.Water, new Vector2(0.5f, 0) }
         };
         
         public string Id { get;  set; }
@@ -106,7 +107,7 @@ namespace Experimental.Voxel
         private Vector2[] GetUVs(VoxelType voxelType)
         {
             var uvOrigin = textureUvs[voxelType];
-            var textureSize = 0.5f;
+            var textureSize = 0.25f;
 
 
             return new Vector2[] {

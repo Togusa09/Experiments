@@ -50,26 +50,51 @@ public class VoxelRoot : MonoBehaviour
                 float xCoord = 1566f + x / 20f * scale;
                 float zCoord = 5000f + z / 20f * scale;
 
-                var y = Mathf.PerlinNoise(xCoord, zCoord) * 9;
-                var voxelId = calc.CalculateId(new Vector3(x + 0.1f, y + 0.1f, z));
+                var voxelType = VoxelType.Ground;
+
+                var y = (Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * 20;
+
+                if (y < -2)
+                {
+                    voxelType = VoxelType.Water;
+                    y = -3;
+                }
+                else if (y <= 8)
+                {
+                    voxelType = VoxelType.Grass;
+                }
+
+
+                var voxelId = calc.CalculateId(new Vector3(x + 0.1f, y, z + 0.1f));
                 var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
-                voxelGroup.Add(voxelId.VoxelLocalPosition, VoxelType.Ground);
+                voxelGroup.PauseMeshRecalcuation();
+                voxelGroup.Add(voxelId.VoxelLocalPosition, voxelType);
             }
+        }
+
+        foreach(var group in VoxelGroups)
+        {
+            group.Value.ResumeMeshRecalcuation();
         }
     }
 
 
     private void Update()
     {
+        // Todo: replace with something using a proper list, or enum int vals
+
         if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
         {
             switch (_currentVoxelType)
             {
                 case VoxelType.Ground:
-                    _currentVoxelType = VoxelType.Grass;
+                    _currentVoxelType = VoxelType.Water;
                     break;
                 case VoxelType.Grass:
                     _currentVoxelType = VoxelType.Ground;
+                    break;
+                case VoxelType.Water:
+                    _currentVoxelType = VoxelType.Grass;
                     break;
             }
 
@@ -83,6 +108,9 @@ public class VoxelRoot : MonoBehaviour
                     _currentVoxelType = VoxelType.Grass;
                     break;
                 case VoxelType.Grass:
+                    _currentVoxelType = VoxelType.Water;
+                    break;
+                case VoxelType.Water:
                     _currentVoxelType = VoxelType.Ground;
                     break;
             }

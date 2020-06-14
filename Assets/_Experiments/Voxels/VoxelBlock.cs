@@ -8,7 +8,8 @@ namespace Experimental.Voxel
     {
         Air,
         Ground,
-        Grass
+        Grass,
+        Water
     }
 
     public struct VoxelBlock

@@ -21,7 +21,9 @@ public static class VoxelPointHelper
     {
         if (val >= 0) return (int)val;
 
-        return (int)(10.0f - val);
+        if (val % 10 == 0) return (int)(val - 10);
+
+        return (int)(val);
     }
 
     public static Vector3 PointToCubeRemoveLocation(RaycastHit hit)
