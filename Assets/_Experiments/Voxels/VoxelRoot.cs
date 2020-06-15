@@ -6,34 +6,17 @@ public class VoxelRoot : MonoBehaviour
 {
     public Player Player;
     public VoxelGroup VoxelGroupPrefab;
-    private VoxelType _currentVoxelType = VoxelType.Ground;
 
     Dictionary<string, VoxelGroup> VoxelGroups = new Dictionary<string, VoxelGroup>();
 
+    private static VoxelType[] _placeableVoxelTypes = new[] { VoxelType.Ground, VoxelType.Grass, VoxelType.Water };
+    private int _selectedVoxelTypeIndex = 0;
+    private VoxelType CurrentVoxelType => _placeableVoxelTypes[_selectedVoxelTypeIndex];
 
 
     // Start is called before the first frame update
     void Start()
     {
-        //var voxelGroup = Instantiate(VoxelGroupPrefab, transform.position, Quaternion.identity, transform);
-
-        //voxelGroup.PauseMeshRecalcuation();
-
-        //for (var x = 0; x < 10; x++)
-        //{
-        //    voxelGroup.Add(new Vector3(x, 0, 0), VoxelType.Ground);
-        //    voxelGroup.Add(new Vector3(x, 0, 9), VoxelType.Ground);
-        //}
-        //for (var z = 0; z < 10; z++)
-        //{
-        //    voxelGroup.Add(new Vector3(0, 0, z), VoxelType.Ground);
-        //    voxelGroup.Add(new Vector3(9, 0, z), VoxelType.Ground);
-        //}
-        //voxelGroup.ResumeMeshRecalcuation();
-
-        //var voxelId = GetIdForPoint(new Vector3Int(0, 0, 0));
-        //voxelGroup.Id = voxelId;
-        //VoxelGroups[voxelId] = voxelGroup;
         SeedEnvironment();
 
         Player.OnPlayerClick += PlayerClick;
@@ -43,9 +26,9 @@ public class VoxelRoot : MonoBehaviour
     {
         var calc = new VoxelCoordinateCalculator();
         var scale = 1.0f;
-        for (var x = -100; x < 100; x++)
+        for (var x = -10; x < 10; x++)
         {
-            for (var z = -100; z < 100; z++)
+            for (var z = -10; z < 10; z++)
             {
                 float xCoord = 1566f + x / 20f * scale;
                 float zCoord = 5000f + z / 20f * scale;
@@ -85,37 +68,18 @@ public class VoxelRoot : MonoBehaviour
 
         if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
         {
-            switch (_currentVoxelType)
-            {
-                case VoxelType.Ground:
-                    _currentVoxelType = VoxelType.Water;
-                    break;
-                case VoxelType.Grass:
-                    _currentVoxelType = VoxelType.Ground;
-                    break;
-                case VoxelType.Water:
-                    _currentVoxelType = VoxelType.Grass;
-                    break;
-            }
+            _selectedVoxelTypeIndex++;
 
-            Debug.Log(_currentVoxelType);
+            
         }
         else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
         {
-            switch (_currentVoxelType)
-            {
-                case VoxelType.Ground:
-                    _currentVoxelType = VoxelType.Grass;
-                    break;
-                case VoxelType.Grass:
-                    _currentVoxelType = VoxelType.Water;
-                    break;
-                case VoxelType.Water:
-                    _currentVoxelType = VoxelType.Ground;
-                    break;
-            }
-            Debug.Log(_currentVoxelType);
+            _selectedVoxelTypeIndex--;
         }
+
+        _selectedVoxelTypeIndex = (_selectedVoxelTypeIndex + _placeableVoxelTypes.Length) % _placeableVoxelTypes.Length;
+
+        Debug.Log(CurrentVoxelType);
     }
 
     private bool IsInCube(Vector3Int val)
@@ -174,7 +138,7 @@ public class VoxelRoot : MonoBehaviour
                 && voxelPos.y >= 0 && voxelPos.y < 10
                 && voxelPos.z >= 0 && voxelPos.z < 10)
             {
-                voxelGroup.Add(voxelPos, _currentVoxelType);
+                voxelGroup.Add(voxelPos, CurrentVoxelType);
             }
         }
 

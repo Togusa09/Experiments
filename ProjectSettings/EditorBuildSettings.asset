@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Experiments/Voxels/VoxelTest.unity
+    guid: cca4f34fd2e0589449dbf899c65cd805
   m_configObjects: {}
