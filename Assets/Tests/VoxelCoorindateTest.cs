@@ -80,6 +80,12 @@ namespace Assets.Tests
             Assert.AreEqual("-1|0|0", voxelCoords4.VoxelGroupId);
             Assert.AreEqual(new Vector3Int(-10, 0, 0), voxelCoords4.VoxelGroupPosition);
             Assert.AreEqual(new Vector3Int(0, 0, 0), voxelCoords4.VoxelLocalPosition);
+
+            var voxelCoords5 = _voxelCoordinateCalculator.CalculateId(new Vector3(-10f, 0, 0));
+
+            Assert.AreEqual("-1|0|0", voxelCoords5.VoxelGroupId);
+            Assert.AreEqual(new Vector3Int(-10, 0, 0), voxelCoords5.VoxelGroupPosition);
+            Assert.AreEqual(new Vector3Int(0, 0, 0), voxelCoords5.VoxelLocalPosition);
         }
     }
 }

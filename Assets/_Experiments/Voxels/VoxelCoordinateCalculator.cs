@@ -37,8 +37,6 @@ public class VoxelCoordinateCalculator
     {
         if (val >= 0) return Mathf.FloorToInt(val);
 
-        if (val % -10 == 0) return (int)val - 10;
-
         return Mathf.FloorToInt(val);
     }
 
@@ -47,9 +45,14 @@ public class VoxelCoordinateCalculator
     {
         if (val >= 0) return (int)(val / 10);
 
-        
+        var intDiv = Mathf.FloorToInt(val) / 10;
+        var mod = Mathf.FloorToInt(val) % 10;
 
-        return (int)(val / 10) - 1;
+        if (mod == 0) 
+        {
+            return intDiv;
+        }
+        return intDiv - 1;
     }
 }
 

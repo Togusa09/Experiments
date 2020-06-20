@@ -48,7 +48,7 @@ public class VoxelRoot : MonoBehaviour
                 }
 
 
-                var voxelId = calc.CalculateId(new Vector3(x + 0.1f, y, z + 0.1f));
+                var voxelId = calc.CalculateId(new Vector3(x, y, z));
                 var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
                 voxelGroup.PauseMeshRecalcuation();
                 voxelGroup.Add(voxelId.VoxelLocalPosition, voxelType);
