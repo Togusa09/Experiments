@@ -26,9 +26,9 @@ public class VoxelRoot : MonoBehaviour
     {
         var calc = new VoxelCoordinateCalculator();
         var scale = 1.0f;
-        for (var x = -10; x < 10; x++)
+        for (var x = -100; x < 100; x++)
         {
-            for (var z = -10; z < 10; z++)
+            for (var z = -100; z < 100; z++)
             {
                 float xCoord = 1566f + x / 20f * scale;
                 float zCoord = 5000f + z / 20f * scale;
@@ -37,21 +37,29 @@ public class VoxelRoot : MonoBehaviour
 
                 var y = (Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * 20;
 
-                if (y < -2)
+                //if (y < -2)
+                //{
+                //    voxelType = VoxelType.Water;
+                //    y = -3;
+                //}
+                //else if (y <= 8)
+                //{
+                //    voxelType = VoxelType.Grass;
+                //}
+
+                for(var height = -10; height < y; height++)
                 {
-                    voxelType = VoxelType.Water;
-                    y = -3;
-                }
-                else if (y <= 8)
-                {
-                    voxelType = VoxelType.Grass;
+                    var voxelId = calc.CalculateId(new Vector3(x, height, z));
+                    var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
+                    voxelGroup.PauseMeshRecalcuation();
+                    voxelGroup.Add(voxelId.VoxelLocalPosition, VoxelType.Ground);
                 }
 
+                var voxelId2 = calc.CalculateId(new Vector3(x, y, z));
+                var voxelGroup2 = GetOrCreateVoxelGroup(voxelId2.VoxelGroupId);
+                voxelGroup2.PauseMeshRecalcuation();
+                voxelGroup2.Add(voxelId2.VoxelLocalPosition, VoxelType.Grass);
 
-                var voxelId = calc.CalculateId(new Vector3(x, y, z));
-                var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
-                voxelGroup.PauseMeshRecalcuation();
-                voxelGroup.Add(voxelId.VoxelLocalPosition, voxelType);
             }
         }
 
@@ -64,22 +72,21 @@ public class VoxelRoot : MonoBehaviour
 
     private void Update()
     {
-        // Todo: replace with something using a proper list, or enum int vals
-
-        if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
+        if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            _selectedVoxelTypeIndex++;
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
+            {
+                _selectedVoxelTypeIndex++;
+            }
+            else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
+            {
+                _selectedVoxelTypeIndex--;
+            }
 
-            
+            _selectedVoxelTypeIndex = (_selectedVoxelTypeIndex + _placeableVoxelTypes.Length) % _placeableVoxelTypes.Length;
+
+            Debug.Log(CurrentVoxelType);
         }
-        else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
-        {
-            _selectedVoxelTypeIndex--;
-        }
-
-        _selectedVoxelTypeIndex = (_selectedVoxelTypeIndex + _placeableVoxelTypes.Length) % _placeableVoxelTypes.Length;
-
-        Debug.Log(CurrentVoxelType);
     }
 
     private bool IsInCube(Vector3Int val)

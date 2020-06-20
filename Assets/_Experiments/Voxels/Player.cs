@@ -6,6 +6,7 @@ namespace Experimental.Voxel
     public class Player : MonoBehaviour
     {
         public Action<RaycastHit, int> OnPlayerClick;
+        public Camera Camera;
 
         public float speed = 1.0f;
 
@@ -29,10 +30,10 @@ namespace Experimental.Voxel
         {
             ProcessMovement();
 
-            var targetPoint = transform.position + transform.forward * 10;
+            var targetPoint = Camera.transform.position + Camera.transform.forward * 10;
 
             RaycastHit hitInfo;
-            if (Physics.Raycast(transform.position, transform.forward, out hitInfo, 10))
+            if (Physics.Raycast(Camera.transform.position, Camera.transform.forward, out hitInfo, 10))
             {
                 targetPoint = hitInfo.point;
 
@@ -46,7 +47,7 @@ namespace Experimental.Voxel
 
             LineRenderer lr = GetComponent<LineRenderer>();
 
-            lr.SetPosition(0, transform.position + transform.right * 0.2f + transform.up * -0.1f);
+            lr.SetPosition(0, Camera.transform.position + Camera.transform.right * 0.2f + Camera.transform.up * -0.1f);
             lr.SetPosition(1, targetPoint);
 
             lr.startWidth = 0.01f;

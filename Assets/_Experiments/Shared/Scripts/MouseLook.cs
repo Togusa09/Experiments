@@ -59,8 +59,7 @@ namespace Experimental.Shared
 				rotationX = ClampAngle(rotationX, minimumX, maximumX);
 
 				Quaternion xQuaternion = Quaternion.AngleAxis(rotationX, Vector3.up);
-				//transform.localRotation = originalRotation * xQuaternion;
-				GetComponent<Rigidbody>().MoveRotation(originalRotation * xQuaternion);
+				transform.localRotation = originalRotation * xQuaternion;
 			}
 			else
 			{
@@ -68,8 +67,7 @@ namespace Experimental.Shared
 				rotationY = ClampAngle(rotationY, minimumY, maximumY);
 
 				Quaternion yQuaternion = Quaternion.AngleAxis(-rotationY, Vector3.right);
-				//transform.localRotation = originalRotation * yQuaternion;
-				GetComponent<Rigidbody>().MoveRotation(originalRotation * yQuaternion);
+				transform.localRotation = originalRotation * yQuaternion;
 			}
 		}
 

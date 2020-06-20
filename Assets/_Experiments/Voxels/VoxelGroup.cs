@@ -41,6 +41,8 @@ namespace Experimental.Voxel
                 {
                     for (var z = 0; z < 10; z++)
                     {
+                        if (!NeedsMesh(x, y, z)) continue;
+
                         var currentVoxel = Voxels[x, y, z];
 
                         if (currentVoxel.VoxelType != VoxelType.Air)
@@ -69,6 +71,23 @@ namespace Experimental.Voxel
 
             GetComponent<MeshFilter>().mesh = mesh;
             GetComponent<MeshCollider>().sharedMesh = mesh;
+        }
+
+        private bool NeedsMesh(int x, int y, int z)
+        {
+            if (x == 0 || x == 9 || y == 0 || y == 9 || z == 0 || z == 9)
+            {
+                return true;
+            }
+
+            if (Voxels[x, y, z].VoxelType != Voxels[x - 1, y, z].VoxelType || Voxels[x, y, z].VoxelType != Voxels[x + 1, y, z].VoxelType
+                || Voxels[x, y, z].VoxelType != Voxels[x, y - 1, z].VoxelType || Voxels[x, y, z].VoxelType != Voxels[x, y + 1, z].VoxelType
+                || Voxels[x, y, z].VoxelType != Voxels[x, y, z - 1].VoxelType || Voxels[x, y, z].VoxelType != Voxels[x, y, z + 1].VoxelType)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         internal void ResumeMeshRecalcuation()
