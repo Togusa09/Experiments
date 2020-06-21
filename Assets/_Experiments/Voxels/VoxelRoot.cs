@@ -59,7 +59,6 @@ public class VoxelRoot : MonoBehaviour
                 var voxelGroup2 = GetOrCreateVoxelGroup(voxelId2.VoxelGroupId);
                 voxelGroup2.PauseMeshRecalcuation();
                 voxelGroup2.Add(voxelId2.VoxelLocalPosition, VoxelType.Grass);
-
             }
         }
 

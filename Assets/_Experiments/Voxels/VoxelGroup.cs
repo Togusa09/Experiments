@@ -41,13 +41,13 @@ namespace Experimental.Voxel
                 {
                     for (var z = 0; z < 10; z++)
                     {
-                        if (!NeedsMesh(x, y, z)) continue;
+                        var directions = MeshDirections(x, y, z);
 
                         var currentVoxel = Voxels[x, y, z];
 
                         if (currentVoxel.VoxelType != VoxelType.Air)
                         {
-                            int[] triangles = GetTriangles(meshVertices.Count);
+                            int[] triangles = GetTriangles(directions, meshVertices.Count);
                             meshTriangles.AddRange(triangles);
 
                             Vector3[] vertices = GetVerticesForPosition(new Vector3(x, y, z));
@@ -68,26 +68,32 @@ namespace Experimental.Voxel
             mesh.RecalculateNormals();
             mesh.Optimize();
 
-
             GetComponent<MeshFilter>().mesh = mesh;
             GetComponent<MeshCollider>().sharedMesh = mesh;
         }
 
-        private bool NeedsMesh(int x, int y, int z)
+        private Directions MeshDirections(int x, int y, int z)
         {
-            if (x == 0 || x == 9 || y == 0 || y == 9 || z == 0 || z == 9)
-            {
-                return true;
-            }
+            Directions directions = 0;
+            if (x == 0) { directions |= Directions.XNeg; }
+            if (x == 9) { directions |= Directions.XPos; }
 
-            if (Voxels[x, y, z].VoxelType != Voxels[x - 1, y, z].VoxelType || Voxels[x, y, z].VoxelType != Voxels[x + 1, y, z].VoxelType
-                || Voxels[x, y, z].VoxelType != Voxels[x, y - 1, z].VoxelType || Voxels[x, y, z].VoxelType != Voxels[x, y + 1, z].VoxelType
-                || Voxels[x, y, z].VoxelType != Voxels[x, y, z - 1].VoxelType || Voxels[x, y, z].VoxelType != Voxels[x, y, z + 1].VoxelType)
-            {
-                return true;
-            }
+            if (y == 0) { directions |= Directions.YNeg; }
+            if (y == 9) { directions |= Directions.YPos; }
 
-            return false;
+            if (z == 0) { directions |= Directions.ZNeg; }
+            if (z == 9) { directions |= Directions.ZPos; }
+
+            if (x != 0 && Voxels[x, y, z].VoxelType != Voxels[x - 1, y, z].VoxelType) { directions |= Directions.XNeg; }
+            if (x != 9 && Voxels[x, y, z].VoxelType != Voxels[x + 1, y, z].VoxelType) { directions |= Directions.XPos; }
+
+            if (y != 0 && Voxels[x, y, z].VoxelType != Voxels[x, y - 1, z].VoxelType) { directions |= Directions.YNeg; }
+            if (y != 9 && Voxels[x, y, z].VoxelType != Voxels[x, y + 1, z].VoxelType) { directions |= Directions.YPos; }
+
+            if (z != 0 && Voxels[x, y, z].VoxelType != Voxels[x, y, z - 1].VoxelType) { directions |= Directions.ZNeg; }
+            if (z != 9 && Voxels[x, y, z].VoxelType != Voxels[x, y, z + 1].VoxelType) { directions |= Directions.ZPos; }
+
+            return directions;
         }
 
         internal void ResumeMeshRecalcuation()
@@ -128,113 +134,140 @@ namespace Experimental.Voxel
             var uvOrigin = textureUvs[voxelType];
             var textureSize = 0.25f;
 
-
             return new Vector2[] {
-                            uvOrigin + new Vector2(0, textureSize),
-                            uvOrigin, //new Vector2(0, 0),
-                            uvOrigin + new Vector2(textureSize, textureSize),
-                            uvOrigin + new Vector2(textureSize, 0),
+                uvOrigin + new Vector2(0, textureSize),
+                uvOrigin, //new Vector2(0, 0),
+                uvOrigin + new Vector2(textureSize, textureSize),
+                uvOrigin + new Vector2(textureSize, 0),
 
-                            uvOrigin + new Vector2(0, textureSize),
-                            uvOrigin,
-                            uvOrigin + new Vector2(textureSize, textureSize),
-                            uvOrigin + new Vector2(textureSize, 0),
+                uvOrigin + new Vector2(0, textureSize),
+                uvOrigin,
+                uvOrigin + new Vector2(textureSize, textureSize),
+                uvOrigin + new Vector2(textureSize, 0),
 
-                            uvOrigin + new Vector2(0, textureSize),
-                            uvOrigin,
-                            uvOrigin + new Vector2(textureSize, textureSize),
-                            uvOrigin + new Vector2(textureSize, 0),
+                uvOrigin + new Vector2(0, textureSize),
+                uvOrigin,
+                uvOrigin + new Vector2(textureSize, textureSize),
+                uvOrigin + new Vector2(textureSize, 0),
 
-                            uvOrigin + new Vector2(0, textureSize),
-                            uvOrigin,
-                            uvOrigin + new Vector2(textureSize, textureSize),
-                            uvOrigin + new Vector2(textureSize, 0),
+                uvOrigin + new Vector2(0, textureSize),
+                uvOrigin,
+                uvOrigin + new Vector2(textureSize, textureSize),
+                uvOrigin + new Vector2(textureSize, 0),
 
-                            uvOrigin + new Vector2(0, textureSize),
-                            uvOrigin,
-                            uvOrigin + new Vector2(textureSize, textureSize),
-                            uvOrigin + new Vector2(textureSize, 0),
+                uvOrigin + new Vector2(0, textureSize),
+                uvOrigin,
+                uvOrigin + new Vector2(textureSize, textureSize),
+                uvOrigin + new Vector2(textureSize, 0),
 
-                            uvOrigin + new Vector2(0, textureSize),
-                            uvOrigin,
-                            uvOrigin + new Vector2(textureSize, textureSize),
-                            uvOrigin + new Vector2(textureSize, 0),
-                        };
+                uvOrigin + new Vector2(0, textureSize),
+                uvOrigin,
+                uvOrigin + new Vector2(textureSize, textureSize),
+                uvOrigin + new Vector2(textureSize, 0),
+            };
         }
 
-
-        private static int[] GetTriangles(int offset = 0)
+        private static int[] GetTriangles(Directions directions, int offset = 0)
         {
-            var triangles = new int[] {
-                            0,2,1,
-                            0,3,2,
+            var triangles = new List<int>();
 
-                            4,6,5,
-                            4,7,6,
-
-                            8,10,9,
-                            8,11,10,
-
-                            12,14,13,
-                            12,15,14,
-
-                            16,18,17,
-                            16,19,18,
-
-                            20,22,21,
-                            20,23,22
-                        };
-            for (var i = 0; i < triangles.Length; i++)
+            if ((directions & Directions.ZNeg) == Directions.ZNeg)
             {
-                triangles[i] += offset;
+                triangles.AddRange(new int[]
+                {
+                    0,2,1,
+                    0,3,2
+                });
             }
-            return triangles;
+
+            if ((directions & Directions.XPos) == Directions.XPos)
+            {
+                triangles.AddRange(new int[]
+                {
+                    4,6,5,
+                    4,7,6
+                });
+            }
+
+            if ((directions & Directions.ZPos) == Directions.ZPos)
+            {
+                triangles.AddRange(new int[]
+                {
+                    8,10,9,
+                    8,11,10
+                });
+            }
+
+            if ((directions & Directions.XNeg) == Directions.XNeg)
+            {
+                triangles.AddRange(new int[]
+                {
+                    12,14,13,
+                    12,15,14
+                });
+            }
+
+            if ((directions & Directions.YPos) == Directions.YPos)
+            {
+                triangles.AddRange(new int[]
+                {
+                    16,18,17,
+                    16,19,18
+                });
+            }
+
+            if ((directions & Directions.YNeg) == Directions.YNeg)
+            {
+                triangles.AddRange(new int[]
+                {
+                    20,22,21,
+                    20,23,22
+                });
+            }
+
+            var triangleArray = triangles.ToArray();
+
+            for (var i = 0; i < triangleArray.Length; i++)
+            {
+                triangleArray[i] += offset;
+            }
+            return triangleArray;
         }
 
         private static Vector3[] GetVerticesForPosition(Vector3 position)
         {
             return new Vector3[]
-                            {
-                            new Vector3(position.x,     position.y,     position.z),
-                            new Vector3(position.x + 1, position.y,     position.z),
-                            new Vector3(position.x + 1, position.y + 1, position.z),
-                            new Vector3(position.x,     position.y + 1, position.z),
+            {
+                new Vector3(position.x,     position.y,     position.z),
+                new Vector3(position.x + 1, position.y,     position.z),
+                new Vector3(position.x + 1, position.y + 1, position.z),
+                new Vector3(position.x,     position.y + 1, position.z),
 
-                            new Vector3(position.x + 1, position.y,     position.z),
-                            new Vector3(position.x + 1, position.y,     position.z + 1),
-                            new Vector3(position.x + 1, position.y + 1, position.z + 1),
-                            new Vector3(position.x + 1, position.y + 1, position.z),
+                new Vector3(position.x + 1, position.y,     position.z),
+                new Vector3(position.x + 1, position.y,     position.z + 1),
+                new Vector3(position.x + 1, position.y + 1, position.z + 1),
+                new Vector3(position.x + 1, position.y + 1, position.z),
 
-                            new Vector3(position.x + 1, position.y,     position.z + 1),
-                            new Vector3(position.x,     position.y,     position.z + 1),
-                            new Vector3(position.x,     position.y + 1, position.z + 1),
-                            new Vector3(position.x + 1, position.y + 1, position.z + 1),
+                new Vector3(position.x + 1, position.y,     position.z + 1),
+                new Vector3(position.x,     position.y,     position.z + 1),
+                new Vector3(position.x,     position.y + 1, position.z + 1),
+                new Vector3(position.x + 1, position.y + 1, position.z + 1),
 
-                            new Vector3(position.x, position.y,     position.z + 1),
-                            new Vector3(position.x, position.y,     position.z),
-                            new Vector3(position.x, position.y + 1, position.z),
-                            new Vector3(position.x, position.y + 1, position.z + 1),
+                new Vector3(position.x,     position.y,     position.z + 1),
+                new Vector3(position.x,     position.y,     position.z),
+                new Vector3(position.x,     position.y + 1, position.z),
+                new Vector3(position.x,     position.y + 1, position.z + 1),
 
-                            new Vector3(position.x,     position.y + 1, position.z),
-                            new Vector3(position.x + 1, position.y + 1, position.z),
-                            new Vector3(position.x + 1, position.y + 1, position.z + 1),
-                            new Vector3(position.x,     position.y + 1, position.z + 1),
+                new Vector3(position.x,     position.y + 1, position.z),
+                new Vector3(position.x + 1, position.y + 1, position.z),
+                new Vector3(position.x + 1, position.y + 1, position.z + 1),
+                new Vector3(position.x,     position.y + 1, position.z + 1),
 
-                            new Vector3(position.x,     position.y, position.z),
-                            new Vector3(position.x,     position.y, position.z + 1),
-                            new Vector3(position.x + 1, position.y, position.z + 1),
-                            new Vector3(position.x + 1, position.y, position.z),
-
-                                //new Vector3(position.x,      position.y,      position.z),
-                                //new Vector3(position.x + 1,  position.y,      position.z),
-                                //new Vector3(position.x + 1,  position.y + 1,  position.z),
-                                //new Vector3(position.x,      position.y + 1,  position.z),
-
-                                //new Vector3(position.x,      position.y,      position.z + 1),
-                                //new Vector3(position.x + 1,  position.y,      position.z + 1),
-                                //new Vector3(position.x + 1,  position.y + 1,  position.z + 1),
-                                //new Vector3(position.x,      position.y + 1,  position.z + 1),
-                            };
+                new Vector3(position.x,     position.y,     position.z),
+                new Vector3(position.x,     position.y,     position.z + 1),
+                new Vector3(position.x + 1, position.y,     position.z + 1),
+                new Vector3(position.x + 1, position.y,     position.z),
+            };
         }
 
         private void Update()
