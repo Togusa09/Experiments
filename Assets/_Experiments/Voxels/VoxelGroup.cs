@@ -8,8 +8,11 @@ namespace Experimental.Voxel
     [RequireComponent(typeof(MeshRenderer))]
     public class VoxelGroup : MonoBehaviour
     {
-        public VoxelBlock[,,] Voxels = new VoxelBlock[10, 10, 10];
-        
+        //public VoxelBlock[,,] Voxels = new VoxelBlock[10, 10, 10];
+
+        private VoxelBlock[,,] Voxels;
+        private int _voxelSize;
+        private int _voxelSizeMinusOne;
 
         private bool _recalculateMesh = true;
         private Dictionary<VoxelType, Vector2> textureUvs = new Dictionary<VoxelType, Vector2>()
@@ -24,7 +27,7 @@ namespace Experimental.Voxel
         // Start is called before the first frame update
         void Start()
         {
-                       
+            
         }
 
         private void CalculateMesh()
@@ -35,11 +38,11 @@ namespace Experimental.Voxel
             var meshTriangles = new List<int>();
             var meshUVs = new List<Vector2>();
 
-            for (var x = 0; x < 10; x++)
+            for (var x = 0; x < Voxels.GetLength(0); x++)
             {
-                for (var y = 0; y < 10; y++)
+                for (var y = 0; y < Voxels.GetLength(1); y++)
                 {
-                    for (var z = 0; z < 10; z++)
+                    for (var z = 0; z < Voxels.GetLength(2); z++)
                     {
                         var directions = MeshDirections(x, y, z);
 
@@ -61,6 +64,7 @@ namespace Experimental.Voxel
             }
 
             Mesh mesh = new Mesh();
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 
             mesh.vertices = meshVertices.ToArray();
             mesh.uv = meshUVs.ToArray();
@@ -75,23 +79,24 @@ namespace Experimental.Voxel
         private Directions MeshDirections(int x, int y, int z)
         {
             Directions directions = 0;
+
             if (x == 0) { directions |= Directions.XNeg; }
-            if (x == 9) { directions |= Directions.XPos; }
+            if (x == _voxelSizeMinusOne) { directions |= Directions.XPos; }
 
             if (y == 0) { directions |= Directions.YNeg; }
-            if (y == 9) { directions |= Directions.YPos; }
+            if (y == _voxelSizeMinusOne) { directions |= Directions.YPos; }
 
             if (z == 0) { directions |= Directions.ZNeg; }
-            if (z == 9) { directions |= Directions.ZPos; }
+            if (z == _voxelSizeMinusOne) { directions |= Directions.ZPos; }
 
             if (x != 0 && Voxels[x, y, z].VoxelType != Voxels[x - 1, y, z].VoxelType) { directions |= Directions.XNeg; }
-            if (x != 9 && Voxels[x, y, z].VoxelType != Voxels[x + 1, y, z].VoxelType) { directions |= Directions.XPos; }
+            if (x < _voxelSizeMinusOne && Voxels[x, y, z].VoxelType != Voxels[x + 1, y, z].VoxelType) { directions |= Directions.XPos; }
 
             if (y != 0 && Voxels[x, y, z].VoxelType != Voxels[x, y - 1, z].VoxelType) { directions |= Directions.YNeg; }
-            if (y != 9 && Voxels[x, y, z].VoxelType != Voxels[x, y + 1, z].VoxelType) { directions |= Directions.YPos; }
+            if (y < _voxelSizeMinusOne && Voxels[x, y, z].VoxelType != Voxels[x, y + 1, z].VoxelType) { directions |= Directions.YPos; }
 
             if (z != 0 && Voxels[x, y, z].VoxelType != Voxels[x, y, z - 1].VoxelType) { directions |= Directions.ZNeg; }
-            if (z != 9 && Voxels[x, y, z].VoxelType != Voxels[x, y, z + 1].VoxelType) { directions |= Directions.ZPos; }
+            if (z < _voxelSizeMinusOne && Voxels[x, y, z].VoxelType != Voxels[x, y, z + 1].VoxelType) { directions |= Directions.ZPos; }
 
             return directions;
         }
@@ -109,11 +114,17 @@ namespace Experimental.Voxel
 
         internal void Add(Vector3 voxelPos, VoxelType voxelType)
         {
+            if (voxelPos.x < 0 || voxelPos.y < 0 || voxelPos.z < 0) return;
+            if (voxelPos.x > Voxels.GetLength(0) || voxelPos.y > Voxels.GetLength(1) || voxelPos.z > Voxels.GetLength(2)) return;
+
             SetPoint(voxelPos, voxelType);
         }
 
         internal void Remove(Vector3 voxelPos)
         {
+            if (voxelPos.x < 0 || voxelPos.y < 0 || voxelPos.z < 0) return;
+            if (voxelPos.x > Voxels.GetLength(0) || voxelPos.y > Voxels.GetLength(1) || voxelPos.z > Voxels.GetLength(2)) return;
+
             SetPoint(voxelPos, VoxelType.Air);
         }
 
@@ -128,6 +139,13 @@ namespace Experimental.Voxel
             CalculateMesh();
         }
 
+        public void SetVoxelSize(int voxelSize)
+        {
+            _voxelSize = voxelSize;
+            _voxelSizeMinusOne = voxelSize - 1;
+
+            Voxels = new VoxelBlock[voxelSize, voxelSize, voxelSize];
+        }
 
         private Vector2[] GetUVs(VoxelType voxelType)
         {

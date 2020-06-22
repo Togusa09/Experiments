@@ -10,7 +10,7 @@ namespace Assets.Tests
         [SetUp]
         public void Setup()
         {
-            _voxelCoordinateCalculator = new VoxelCoordinateCalculator();
+            _voxelCoordinateCalculator = new VoxelCoordinateCalculator(10);
         }
 
         [Test]

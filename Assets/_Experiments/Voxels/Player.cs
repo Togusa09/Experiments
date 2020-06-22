@@ -75,15 +75,17 @@ namespace Experimental.Voxel
                 Gizmos.DrawSphere(_targetHit.point, 0.1f);
                 Gizmos.DrawLine(_targetHit.point, _targetHit.point + _targetHit.normal);
 
-                var voxelPlacePos = VoxelPointHelper.PointToCubePlaceLocation(_targetHit);
-                var voxelRemovePos = VoxelPointHelper.PointToCubeRemoveLocation(_targetHit);
+                
 
-                var centerShift = Vector3.one * 0.5f;
+                //var voxelPlacePos = VoxelPointHelper.PointToCubePlaceLocation(_targetHit);
+                //var voxelRemovePos = VoxelPointHelper.PointToCubeRemoveLocation(_targetHit);
 
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireCube(voxelPlacePos + centerShift, Vector3.one);
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireCube(voxelRemovePos + centerShift, Vector3.one);
+                //var centerShift = Vector3.one * 0.5f;
+
+                //Gizmos.color = Color.green;
+                //Gizmos.DrawWireCube(voxelPlacePos + centerShift, Vector3.one);
+                //Gizmos.color = Color.red;
+                //Gizmos.DrawWireCube(voxelRemovePos + centerShift, Vector3.one);
             }
         }
 

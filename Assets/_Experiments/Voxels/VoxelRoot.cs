@@ -6,6 +6,7 @@ public class VoxelRoot : MonoBehaviour
 {
     public Player Player;
     public VoxelGroup VoxelGroupPrefab;
+    public int VoxelSize = 10;
 
     Dictionary<string, VoxelGroup> VoxelGroups = new Dictionary<string, VoxelGroup>();
 
@@ -24,18 +25,21 @@ public class VoxelRoot : MonoBehaviour
 
     private void SeedEnvironment()
     {
-        var calc = new VoxelCoordinateCalculator();
+        var stopWatch = new System.Diagnostics.Stopwatch();
+        
+        var calc = new VoxelCoordinateCalculator(VoxelSize);
         var scale = 1.0f;
-        for (var x = -100; x < 100; x++)
+        for (var x = -1000; x < 1000; x++)
         {
-            for (var z = -100; z < 100; z++)
+            for (var z = -1000; z < 1000; z++)
             {
-                float xCoord = 1566f + x / 20f * scale;
-                float zCoord = 5000f + z / 20f * scale;
+                stopWatch.Restart();
+                float xCoord = 1566f + x / 40f * scale;
+                float zCoord = 5000f + z / 40f * scale;
 
-                var voxelType = VoxelType.Ground;
+                //var voxelType = VoxelType.Ground;
 
-                var y = (Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * 20;
+                var y = (int)((Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * (VoxelSize * 2));
 
                 //if (y < -2)
                 //{
@@ -47,7 +51,7 @@ public class VoxelRoot : MonoBehaviour
                 //    voxelType = VoxelType.Grass;
                 //}
 
-                for(var height = -10; height < y; height++)
+                for (var height = -VoxelSize; height < y; height++)
                 {
                     var voxelId = calc.CalculateId(new Vector3(x, height, z));
                     var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
@@ -55,17 +59,34 @@ public class VoxelRoot : MonoBehaviour
                     voxelGroup.Add(voxelId.VoxelLocalPosition, VoxelType.Ground);
                 }
 
+
                 var voxelId2 = calc.CalculateId(new Vector3(x, y, z));
                 var voxelGroup2 = GetOrCreateVoxelGroup(voxelId2.VoxelGroupId);
                 voxelGroup2.PauseMeshRecalcuation();
                 voxelGroup2.Add(voxelId2.VoxelLocalPosition, VoxelType.Grass);
+                
+
+                //var voxelId3 = calc.CalculateId(new Vector3(x, y - 1, z));
+                //var voxelGroup3 = GetOrCreateVoxelGroup(voxelId3.VoxelGroupId);
+                //voxelGroup3.PauseMeshRecalcuation();
+                //voxelGroup3.Add(voxelId3.VoxelLocalPosition, VoxelType.Grass);
+
+                stopWatch.Stop();
+                
+                Debug.Log(stopWatch.Elapsed);
             }
         }
 
-        foreach(var group in VoxelGroups)
+        stopWatch.Restart();
+
+        Debug.Log("Recalculating");
+
+        foreach (var group in VoxelGroups)
         {
             group.Value.ResumeMeshRecalcuation();
         }
+
+        Debug.Log("Finished recalculating " + stopWatch.Elapsed);
     }
 
 
@@ -88,17 +109,6 @@ public class VoxelRoot : MonoBehaviour
         }
     }
 
-    private bool IsInCube(Vector3Int val)
-    {
-        if (val.x >= 0 && val.x < 10
-           && val.y >= 0 && val.y < 10
-           && val.z >= 0 && val.z < 10)
-        {
-            return true;
-        }
-        return false;
-    }
-
     private void PlayerClick(RaycastHit hitInfo, int buttonId)
     {
         Vector3 targetPoint = Vector3.zero;
@@ -112,10 +122,9 @@ public class VoxelRoot : MonoBehaviour
                 break;
         }
 
-
         var hitVoxelGroup = hitInfo.transform.GetComponent<VoxelGroup>();
 
-        var calc = new VoxelCoordinateCalculator();
+        var calc = new VoxelCoordinateCalculator(VoxelSize);
         var voxelId = calc.CalculateId(targetPoint);
 
         VoxelGroup voxelGroup;
@@ -129,59 +138,33 @@ public class VoxelRoot : MonoBehaviour
             voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
         }
 
-
-        Debug.Log($"Hit: {targetPoint}, Id: {voxelId.VoxelLocalPosition}, Local: {voxelId.VoxelLocalPosition}");
-
-        Debug.Log(voxelGroup.Id);
-        Debug.Log(voxelId.VoxelLocalPosition);
-
         if (buttonId == 0)
         {
             var voxelPos = voxelId.VoxelLocalPosition;
-
-
-            if (voxelPos.x >= 0 && voxelPos.x < 10
-                && voxelPos.y >= 0 && voxelPos.y < 10
-                && voxelPos.z >= 0 && voxelPos.z < 10)
-            {
-                voxelGroup.Add(voxelPos, CurrentVoxelType);
-            }
+            voxelGroup.Add(voxelPos, CurrentVoxelType);
         }
 
         if (buttonId == 1)
         {
             var voxelPos = voxelId.VoxelLocalPosition;
-
-            if (voxelPos.x >= 0 && voxelPos.x < 10
-                && voxelPos.y >= 0 && voxelPos.y < 10
-                && voxelPos.z >= 0 && voxelPos.z < 10)
-            {
-                voxelGroup.Remove(voxelPos);
-            }
+            voxelGroup.Remove(voxelPos);
         }
     }
 
     private VoxelGroup GetOrCreateVoxelGroup(string voxelId)
     {
-        Debug.Log(voxelId);
+        //Debug.Log(voxelId);
         if (VoxelGroups.ContainsKey(voxelId)) return VoxelGroups[voxelId];
 
         var position = GetPointForId(voxelId);
 
         var voxelGroup = Instantiate(VoxelGroupPrefab, position, Quaternion.identity, transform);
         voxelGroup.Id = voxelId;
+        voxelGroup.SetVoxelSize(VoxelSize);
         VoxelGroups[voxelId] = voxelGroup;
         return voxelGroup;
     }
 
-    private string GetIdForPoint(Vector3Int point)
-    {
-        var x = (point.x / 10) - (point.x < 0 ? 1 : 0);
-        var y = (point.y / 10) - (point.y < 0 ? 1 : 0);
-        var z = (point.z / 10) - (point.z < 0 ? 1 : 0);
-
-        return $"{x}|{y}|{z}";
-    }
 
     private Vector3Int GetPointForId(string id)
     {
@@ -190,6 +173,6 @@ public class VoxelRoot : MonoBehaviour
         var y = int.Parse(t[1]);
         var z = int.Parse(t[2]);
 
-        return new Vector3Int(x * 10, y * 10, z * 10);
+        return new Vector3Int(x * VoxelSize, y * VoxelSize, z * VoxelSize);
     }
 }

@@ -8,15 +8,23 @@ public class VoxelCoordinate
     public Vector3Int VoxelGroupPosition;
 }
 
+
 public class VoxelCoordinateCalculator
 {
+    private int _voxelSize;
+
+    public VoxelCoordinateCalculator(int voxelSize)
+    {
+        _voxelSize = voxelSize;
+    }
+
     public VoxelCoordinate CalculateId(Vector3 coordinate)
     {
         var xGroupId = HandleNegativesForGroup(coordinate.x);
         var yGroupId = HandleNegativesForGroup(coordinate.y);
         var zGroupId = HandleNegativesForGroup(coordinate.z);
 
-        var voxelGroupPosition = new Vector3Int(xGroupId, yGroupId, zGroupId) * 10;
+        var voxelGroupPosition = new Vector3Int(xGroupId, yGroupId, zGroupId) * _voxelSize;
 
         var localPosition = new Vector3Int(
             HandleNegativesForVoxel(coordinate.x),
@@ -24,7 +32,6 @@ public class VoxelCoordinateCalculator
             HandleNegativesForVoxel(coordinate.z)
             ) - voxelGroupPosition;
             
-
         return new VoxelCoordinate
         {
             VoxelGroupId = $"{xGroupId}|{yGroupId}|{zGroupId}",
@@ -43,10 +50,10 @@ public class VoxelCoordinateCalculator
 
     private int HandleNegativesForGroup(float val)
     {
-        if (val >= 0) return (int)(val / 10);
+        if (val >= 0) return (int)(val / _voxelSize);
 
-        var intDiv = Mathf.FloorToInt(val) / 10;
-        var mod = Mathf.FloorToInt(val) % 10;
+        var intDiv = Mathf.FloorToInt(val) / _voxelSize;
+        var mod = Mathf.FloorToInt(val) % _voxelSize;
 
         if (mod == 0) 
         {
