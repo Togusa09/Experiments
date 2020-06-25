@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Experimental.Voxel
 {
-    public enum VoxelType
+    public enum VoxelType : short
     {
         Air,
         Ground,

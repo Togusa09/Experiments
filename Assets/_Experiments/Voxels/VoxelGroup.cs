@@ -36,7 +36,6 @@ namespace Experimental.Voxel
             if (!_recalculateMesh) return;
 
             var meshVertices = new List<Vector3>();
-            //var meshTriangles = new List<int>();
             var meshUVs = new List<Vector2>();
 
             for (var x = 0; x < Voxels.GetLength(0); x++)
@@ -46,14 +45,10 @@ namespace Experimental.Voxel
                     for (var z = 0; z < Voxels.GetLength(2); z++)
                     {
                         var directions = MeshDirections(x, y, z);
-
                         var currentVoxel = Voxels[x, y, z];
 
                         if (currentVoxel.VoxelType != VoxelType.Air)
                         {
-                            //int[] triangles = GetTriangles(directions, meshVertices.Count);
-                            //meshTriangles.AddRange(triangles);
-
                             Vector3[] vertices = GetVerticesForPosition(new Vector3(x, y, z), directions);
                             meshVertices.AddRange(vertices);
 
@@ -67,7 +62,6 @@ namespace Experimental.Voxel
             var meshTriangles = GenerateMeshTriangles(meshVertices.Count);
 
             Mesh mesh = new Mesh();
-            //mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 
             mesh.vertices = meshVertices.ToArray();
             mesh.uv = meshUVs.ToArray();

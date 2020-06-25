@@ -1,8 +1,16 @@
-﻿using System;
+﻿using Experimental.Player;
+using System;
 using UnityEngine;
 
 namespace Experimental.Voxel
 {
+    public enum PlayerState
+    {
+        ControlDisabled,
+        Normal,
+        Flying
+    }
+
     public class Player : MonoBehaviour
     {
         public Action<RaycastHit, int> OnPlayerClick;
@@ -12,6 +20,31 @@ namespace Experimental.Voxel
 
         private RaycastHit _targetHit;
         private bool hasTarget;
+
+        private PlayerState _playerState;
+        public PlayerState PlayerState {
+            get
+            {
+                return _playerState;
+            }
+            set
+            {
+                if (value == PlayerState.Normal || value == PlayerState.Flying)
+                {
+                    GetComponent<MouseLook>().enabled = false;
+                    GetComponentInChildren<MouseLook>().enabled = false;
+                    GetComponent<Player>().enabled = false;
+                }
+                else
+                {
+                    GetComponent<MouseLook>().enabled = true;
+                    GetComponentInChildren<MouseLook>().enabled = true;
+                    GetComponent<Player>().enabled = true;
+                }
+
+                _playerState = value;
+            }
+        }
 
         // Start is called before the first frame update
         void Start()
@@ -89,42 +122,72 @@ namespace Experimental.Voxel
             }
         }
 
+        //public void OnKey(KeyCode keyCode)
+        //{
+        //    var translation = Vector3.zero;
 
-        private void ProcessMovement()
+        //    switch (keyCode)
+        //    {
+        //        case KeyCode.W:
+        //            translation += transform.forward;
+        //            break;
+        //        case KeyCode.S:
+        //            translation -= transform.forward;
+        //            break;
+        //        case KeyCode.A:
+        //            translation -= transform.right;
+        //            break;
+        //        case KeyCode.D:
+        //            translation += transform.right;
+        //            break;
+        //        case KeyCode.Space:
+        //            translation += transform.up;
+        //            break;
+        //        case KeyCode.LeftShift:
+        //            translation -= transform.up;
+        //            break;
+        //    }
+
+        //    translation = translation.normalized * speed * Time.deltaTime;
+
+        //    transform.position += translation;
+        //}
+
+        public void ProcessMovement()
         {
-            var translation = Vector3.zero;
+            if (PlayerState == PlayerState.Normal || PlayerState == PlayerState.Flying)
+            {
+                var translation = Vector3.zero;
 
-            if (Input.GetKey(KeyCode.W))
-            {
-                translation += transform.forward;
-            }
-            if (Input.GetKey(KeyCode.S))
-            {
-                translation -= transform.forward;
-            }
-            if (Input.GetKey(KeyCode.A))
-            {
-                translation -= transform.right;
-            }
-            if (Input.GetKey(KeyCode.D))
-            {
-                translation += transform.right;
-            }
+                if (Input.GetKey(KeyCode.W))
+                {
+                    translation += transform.forward;
+                }
+                if (Input.GetKey(KeyCode.S))
+                {
+                    translation -= transform.forward;
+                }
+                if (Input.GetKey(KeyCode.A))
+                {
+                    translation -= transform.right;
+                }
+                if (Input.GetKey(KeyCode.D))
+                {
+                    translation += transform.right;
+                }
+                if (Input.GetKey(KeyCode.Space))
+                {
+                    translation += transform.up;
+                }
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    translation -= transform.up;
+                }
 
-            if (Input.GetKey(KeyCode.Space))
-            {
-                translation += transform.up;
+                translation = translation.normalized * speed * Time.deltaTime;
+
+                transform.position += translation;
             }
-            if (Input.GetKey(KeyCode.LeftShift))
-            {
-                translation -= transform.up;
-            }
-
-            translation = translation.normalized * speed * Time.deltaTime;
-
-            transform.position += translation;
-
-            
         }
     }
 }
