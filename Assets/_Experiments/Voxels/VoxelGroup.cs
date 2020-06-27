@@ -9,19 +9,19 @@ namespace Experimental.Voxel
     [RequireComponent(typeof(MeshRenderer))]
     public class VoxelGroup : MonoBehaviour
     {
-        //public VoxelBlock[,,] Voxels = new VoxelBlock[10, 10, 10];
-
         private VoxelBlock[,,] Voxels;
         private int _voxelSize;
         private int _voxelSizeMinusOne;
 
-        private bool _recalculateMesh = true;
         private Dictionary<VoxelType, Vector2> textureUvs = new Dictionary<VoxelType, Vector2>()
         {
             { VoxelType.Ground, new Vector2(0, 0) },
             { VoxelType.Grass, new Vector2(0.25f, 0) },
             { VoxelType.Water, new Vector2(0.5f, 0) }
         };
+
+        private bool _isLoaded;
+        public bool IsLoaded => _isLoaded;
         
         public string Id { get;  set; }
 
@@ -33,8 +33,6 @@ namespace Experimental.Voxel
 
         private void CalculateMesh()
         {
-            if (!_recalculateMesh) return;
-
             var meshVertices = new List<Vector3>();
             var meshUVs = new List<Vector2>();
 
@@ -53,6 +51,7 @@ namespace Experimental.Voxel
                             meshVertices.AddRange(vertices);
 
                             Vector2[] uvs = GetUVs(currentVoxel.VoxelType, directions);
+                            //Vector2[] oldUvs = GetUVsOld(currentVoxel.VoxelType, directions);
                             meshUVs.AddRange(uvs);
                         }
                     }
@@ -98,16 +97,11 @@ namespace Experimental.Voxel
             return directions;
         }
 
-        internal void ResumeMeshRecalcuation()
+        internal void RecalculateMesh()
         {
-            _recalculateMesh = true;
             CalculateMesh();
         }
 
-        internal void PauseMeshRecalcuation()
-        {
-            _recalculateMesh = false;
-        }
 
         internal void Add(Vector3 voxelPos, VoxelType voxelType)
         {
@@ -144,7 +138,89 @@ namespace Experimental.Voxel
             Voxels = new VoxelBlock[voxelSize, voxelSize, voxelSize];
         }
 
+        public void LoadVoxelContent(VoxelBlock[,,] voxelContent)
+        {
+            Array.Copy(voxelContent, Voxels, voxelContent.Length);
+
+            _isLoaded = true;
+        }
+
+        int NumberOfSetBits(int i)
+        {
+            i = i - ((i >> 1) & 0x55555555);
+            i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+            return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+        }
+
         private Vector2[] GetUVs(VoxelType voxelType, Directions directions)
+        {
+            var uvOrigin = textureUvs[voxelType];
+            var textureSize = 0.25f;
+
+            // Code is currently repetetive due to future intention to have different texture mappings on each side
+
+            var numberOfSetBits = NumberOfSetBits((int)directions);
+            var uvs = new Vector2[numberOfSetBits * 4];
+            var uvIndex = 0;
+
+            if ((directions & Directions.ZNeg) == Directions.ZNeg)
+            {
+                uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
+                uvs[uvIndex + 1] = uvOrigin;
+                uvs[uvIndex + 2] = uvOrigin + new Vector2(textureSize, textureSize);
+                uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
+                uvIndex += 4;
+            }
+
+            if ((directions & Directions.XPos) == Directions.XPos)
+            {
+                uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
+                uvs[uvIndex + 1] = uvOrigin;
+                uvs[uvIndex + 2] = uvOrigin + new Vector2(textureSize, textureSize);
+                uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
+                uvIndex += 4;
+            }
+
+            if ((directions & Directions.ZPos) == Directions.ZPos)
+            {
+                uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
+                uvs[uvIndex + 1] = uvOrigin;
+                uvs[uvIndex + 2] = uvOrigin + new Vector2(textureSize, textureSize);
+                uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
+                uvIndex += 4;
+            }
+
+            if ((directions & Directions.XNeg) == Directions.XNeg)
+            {
+                uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
+                uvs[uvIndex + 1] = uvOrigin;
+                uvs[uvIndex + 2] = uvOrigin + new Vector2(textureSize, textureSize);
+                uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
+                uvIndex += 4;
+            }
+
+            if ((directions & Directions.YPos) == Directions.YPos)
+            {
+                uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
+                uvs[uvIndex + 1] = uvOrigin;
+                uvs[uvIndex + 2] = uvOrigin + new Vector2(textureSize, textureSize);
+                uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
+                uvIndex += 4;
+            }
+
+            if ((directions & Directions.YNeg) == Directions.YNeg)
+            {
+                uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
+                uvs[uvIndex + 1] = uvOrigin;
+                uvs[uvIndex + 2] = uvOrigin + new Vector2(textureSize, textureSize);
+                uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
+                uvIndex += 4;
+            }
+
+            return uvs;
+        }
+
+        private Vector2[] GetUVsOld(VoxelType voxelType, Directions directions)
         {
             var uvOrigin = textureUvs[voxelType];
             var textureSize = 0.25f;
@@ -153,7 +229,7 @@ namespace Experimental.Voxel
 
             if ((directions & Directions.ZNeg) == Directions.ZNeg)
             {
-                uvs.AddRange(new []
+                uvs.AddRange(new[]
                 {
                     uvOrigin + new Vector2(0, textureSize),
                     uvOrigin, //new Vector2(0, 0),
@@ -223,163 +299,178 @@ namespace Experimental.Voxel
         private static int[] GenerateMeshTriangles(int vertexCount)
         {
             var faceCount = vertexCount / 4;
-            var triangles = new List<int>();
+            //var triangles = new List<int>();
+
+            var triangles = new int[faceCount * 6];
+            var faceIndex = 0;
 
             for (var i = 0; i < vertexCount; i += 4)
             {
-                triangles.AddRange(new int[]
-                {
-                    0 + i,
-                    2 + i,
-                    1 + i,
+                triangles[faceIndex] = i;
+                triangles[faceIndex + 1] = 2 + i;
+                triangles[faceIndex + 2] = 1 + i;
+                triangles[faceIndex + 3] = i;
+                triangles[faceIndex + 4] = 3 + i;
+                triangles[faceIndex + 5] = 2 + i;
 
-                    0 + i,
-                    3 + i,
-                    2 + i
-                });
+                faceIndex += 6;
+                //triangles.AddRange(new int[]
+                //{
+                //    0 + i,
+                //    2 + i,
+                //    1 + i,
+
+                //    0 + i,
+                //    3 + i,
+                //    2 + i
+                //});
             }
 
-            return triangles.ToArray();
+            return triangles;
+            //return triangles.ToArray();
         }
 
-        //private static int[] GetTriangles(Directions directions, int offset = 0)
-        //{
-        //    var triangles = new List<int>();
-
-        //    if ((directions & Directions.ZNeg) == Directions.ZNeg)
-        //    {
-        //        triangles.AddRange(new int[]
-        //        {
-        //            0,2,1,
-        //            0,3,2
-        //        });
-        //    }
-
-        //    if ((directions & Directions.XPos) == Directions.XPos)
-        //    {
-        //        triangles.AddRange(new int[]
-        //        {
-        //            4,6,5,
-        //            4,7,6
-        //        });
-        //    }
-
-        //    if ((directions & Directions.ZPos) == Directions.ZPos)
-        //    {
-        //        triangles.AddRange(new int[]
-        //        {
-        //            8,10,9,
-        //            8,11,10
-        //        });
-        //    }
-
-        //    if ((directions & Directions.XNeg) == Directions.XNeg)
-        //    {
-        //        triangles.AddRange(new int[]
-        //        {
-        //            12,14,13,
-        //            12,15,14
-        //        });
-        //    }
-
-        //    if ((directions & Directions.YPos) == Directions.YPos)
-        //    {
-        //        triangles.AddRange(new int[]
-        //        {
-        //            16,18,17,
-        //            16,19,18
-        //        });
-        //    }
-
-        //    if ((directions & Directions.YNeg) == Directions.YNeg)
-        //    {
-        //        triangles.AddRange(new int[]
-        //        {
-        //            20,22,21,
-        //            20,23,22
-        //        });
-        //    }
-
-        //    var triangleArray = triangles.ToArray();
-
-        //    for (var i = 0; i < triangleArray.Length; i++)
-        //    {
-        //        triangleArray[i] += offset;
-        //    }
-        //    return triangleArray;
-        //}
-
-        private static Vector3[] GetVerticesForPosition(Vector3 position, Directions directions)
+        private Vector3[] GetVerticesForPosition(Vector3 position, Directions directions)
         {
-            var verticies = new List<Vector3>();
+            //var verticies = new List<Vector3>();
+
+            var numberOfSetBits = NumberOfSetBits((int)directions);
+            var verticies = new Vector3[numberOfSetBits * 4];
+            var vertexIndex = 0;
 
             if ((directions & Directions.ZNeg) == Directions.ZNeg)
             {
-                verticies.AddRange(new Vector3[]
-                {
-                    new Vector3(position.x,     position.y,     position.z),
-                    new Vector3(position.x + 1, position.y,     position.z),
-                    new Vector3(position.x + 1, position.y + 1, position.z),
-                    new Vector3(position.x,     position.y + 1, position.z),
-                });
+                verticies[vertexIndex] = new Vector3(position.x, position.y, position.z);
+                verticies[vertexIndex + 1] = new Vector3(position.x + 1, position.y, position.z);
+                verticies[vertexIndex + 2] = new Vector3(position.x + 1, position.y + 1, position.z);
+                verticies[vertexIndex + 3] = new Vector3(position.x, position.y + 1, position.z);
+                vertexIndex += 4;
+
+                //verticies.AddRange(new Vector3[]
+                //{
+                //    new Vector3(position.x,     position.y,     position.z),
+                //    new Vector3(position.x + 1, position.y,     position.z),
+                //    new Vector3(position.x + 1, position.y + 1, position.z),
+                //    new Vector3(position.x,     position.y + 1, position.z),
+                //});
             }
 
             if ((directions & Directions.XPos) == Directions.XPos)
             {
-                verticies.AddRange(new Vector3[]
-                {
-                    new Vector3(position.x + 1, position.y,     position.z),
-                    new Vector3(position.x + 1, position.y,     position.z + 1),
-                    new Vector3(position.x + 1, position.y + 1, position.z + 1),
-                    new Vector3(position.x + 1, position.y + 1, position.z),
-                });
+                verticies[vertexIndex] = new Vector3(position.x + 1, position.y, position.z);
+                verticies[vertexIndex + 1] = new Vector3(position.x + 1, position.y, position.z + 1);
+                verticies[vertexIndex + 2] = new Vector3(position.x + 1, position.y + 1, position.z + 1);
+                verticies[vertexIndex + 3] = new Vector3(position.x + 1, position.y + 1, position.z);
+                vertexIndex += 4;
             }
 
             if ((directions & Directions.ZPos) == Directions.ZPos)
             {
-                verticies.AddRange(new Vector3[]
-                {
-                    new Vector3(position.x + 1, position.y,     position.z + 1),
-                    new Vector3(position.x,     position.y,     position.z + 1),
-                    new Vector3(position.x,     position.y + 1, position.z + 1),
-                    new Vector3(position.x + 1, position.y + 1, position.z + 1),
-                });
+                verticies[vertexIndex] = new Vector3(position.x + 1, position.y, position.z + 1);
+                verticies[vertexIndex + 1] = new Vector3(position.x, position.y, position.z + 1);
+                verticies[vertexIndex + 2] = new Vector3(position.x, position.y + 1, position.z + 1);
+                verticies[vertexIndex + 3] = new Vector3(position.x + 1, position.y + 1, position.z + 1);
+                vertexIndex += 4;
             }
 
             if ((directions & Directions.XNeg) == Directions.XNeg)
             {
-                verticies.AddRange(new Vector3[]
-                {
-                    new Vector3(position.x,     position.y,     position.z + 1),
-                    new Vector3(position.x,     position.y,     position.z),
-                    new Vector3(position.x,     position.y + 1, position.z),
-                    new Vector3(position.x,     position.y + 1, position.z + 1),
-                });
+                verticies[vertexIndex] = new Vector3(position.x, position.y, position.z + 1);
+                verticies[vertexIndex + 1] = new Vector3(position.x, position.y, position.z);
+                verticies[vertexIndex + 2] = new Vector3(position.x, position.y + 1, position.z);
+                verticies[vertexIndex + 3] = new Vector3(position.x, position.y + 1, position.z + 1);
+                vertexIndex += 4;
             }
 
             if ((directions & Directions.YPos) == Directions.YPos)
             {
-                verticies.AddRange(new Vector3[]
-                {
-                    new Vector3(position.x,     position.y + 1, position.z),
-                    new Vector3(position.x + 1, position.y + 1, position.z),
-                    new Vector3(position.x + 1, position.y + 1, position.z + 1),
-                    new Vector3(position.x,     position.y + 1, position.z + 1),
-                });
+                verticies[vertexIndex] = new Vector3(position.x, position.y + 1, position.z);
+                verticies[vertexIndex + 1] = new Vector3(position.x + 1, position.y + 1, position.z);
+                verticies[vertexIndex + 2] = new Vector3(position.x + 1, position.y + 1, position.z + 1);
+                verticies[vertexIndex + 3] = new Vector3(position.x, position.y + 1, position.z + 1);
+                vertexIndex += 4;
             }
 
             if ((directions & Directions.YNeg) == Directions.YNeg)
             {
-                verticies.AddRange(new Vector3[]
-                {
-                    new Vector3(position.x,     position.y,     position.z),
-                    new Vector3(position.x,     position.y,     position.z + 1),
-                    new Vector3(position.x + 1, position.y,     position.z + 1),
-                    new Vector3(position.x + 1, position.y,     position.z),
-                });
+                verticies[vertexIndex] = new Vector3(position.x, position.y, position.z);
+                verticies[vertexIndex + 1] = new Vector3(position.x, position.y, position.z + 1);
+                verticies[vertexIndex + 2] = new Vector3(position.x + 1, position.y, position.z + 1);
+                verticies[vertexIndex + 3] = new Vector3(position.x + 1, position.y, position.z);
+                vertexIndex += 4;
             }
 
-            return verticies.ToArray();
+            return verticies;
+
+            //var verticies = new List<Vector3>();
+
+            //if ((directions & Directions.ZNeg) == Directions.ZNeg)
+            //{
+            //    verticies.AddRange(new Vector3[]
+            //    {
+            //        new Vector3(position.x,     position.y,     position.z),
+            //        new Vector3(position.x + 1, position.y,     position.z),
+            //        new Vector3(position.x + 1, position.y + 1, position.z),
+            //        new Vector3(position.x,     position.y + 1, position.z),
+            //    });
+            //}
+
+            //if ((directions & Directions.XPos) == Directions.XPos)
+            //{
+            //    verticies.AddRange(new Vector3[]
+            //    {
+            //        new Vector3(position.x + 1, position.y,     position.z),
+            //        new Vector3(position.x + 1, position.y,     position.z + 1),
+            //        new Vector3(position.x + 1, position.y + 1, position.z + 1),
+            //        new Vector3(position.x + 1, position.y + 1, position.z),
+            //    });
+            //}
+
+            //if ((directions & Directions.ZPos) == Directions.ZPos)
+            //{
+            //    verticies.AddRange(new Vector3[]
+            //    {
+            //        new Vector3(position.x + 1, position.y,     position.z + 1),
+            //        new Vector3(position.x,     position.y,     position.z + 1),
+            //        new Vector3(position.x,     position.y + 1, position.z + 1),
+            //        new Vector3(position.x + 1, position.y + 1, position.z + 1),
+            //    });
+            //}
+
+            //if ((directions & Directions.XNeg) == Directions.XNeg)
+            //{
+            //    verticies.AddRange(new Vector3[]
+            //    {
+            //        new Vector3(position.x,     position.y,     position.z + 1),
+            //        new Vector3(position.x,     position.y,     position.z),
+            //        new Vector3(position.x,     position.y + 1, position.z),
+            //        new Vector3(position.x,     position.y + 1, position.z + 1),
+            //    });
+            //}
+
+            //if ((directions & Directions.YPos) == Directions.YPos)
+            //{
+            //    verticies.AddRange(new Vector3[]
+            //    {
+            //        new Vector3(position.x,     position.y + 1, position.z),
+            //        new Vector3(position.x + 1, position.y + 1, position.z),
+            //        new Vector3(position.x + 1, position.y + 1, position.z + 1),
+            //        new Vector3(position.x,     position.y + 1, position.z + 1),
+            //    });
+            //}
+
+            //if ((directions & Directions.YNeg) == Directions.YNeg)
+            //{
+            //    verticies.AddRange(new Vector3[]
+            //    {
+            //        new Vector3(position.x,     position.y,     position.z),
+            //        new Vector3(position.x,     position.y,     position.z + 1),
+            //        new Vector3(position.x + 1, position.y,     position.z + 1),
+            //        new Vector3(position.x + 1, position.y,     position.z),
+            //    });
+            //}
+
+            //return verticies.ToArray();
         }
 
         private void Update()

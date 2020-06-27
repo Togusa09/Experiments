@@ -18,9 +18,6 @@ namespace Experimental.Voxel
         [SerializeField]
         VoxelRoot VoxelRoot;
 
-        [SerializeField]
-        public Action OnMapGenerated;
-
         public void RegenerateSeed()
         {
 
@@ -30,7 +27,6 @@ namespace Experimental.Voxel
         {
             VoxelRoot.DestroyWorld();
             VoxelRoot.GenerateMap();
-            OnMapGenerated?.Invoke();
         }
 
         // Start is called before the first frame update

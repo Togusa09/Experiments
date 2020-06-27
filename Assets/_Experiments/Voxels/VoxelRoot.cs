@@ -19,6 +19,8 @@ public class VoxelRoot : MonoBehaviour
     public int TerrainYMin = -50;
     public int TerrainYMax = 50;
 
+    public Action OnMapLoadComplete;
+
     Dictionary<string, VoxelGroup> VoxelGroups = new Dictionary<string, VoxelGroup>();
 
     private static VoxelType[] _placeableVoxelTypes = new[] { VoxelType.Ground, VoxelType.Grass, VoxelType.Water };
@@ -58,7 +60,7 @@ public class VoxelRoot : MonoBehaviour
 
         stopWatch.Start();
 
-        // Generate required VoxelGroups
+                // Generate required VoxelGroups
         for (var x = TerrainXMin; x < TerrainXMax; x += VoxelSize)
         {
             for (var y = TerrainYMin; y < TerrainYMax; y += VoxelSize)
@@ -69,7 +71,10 @@ public class VoxelRoot : MonoBehaviour
 
                     var voxelId = calc.CalculateId(new Vector3(x, y, z));
                     var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
-                    voxelGroup.PauseMeshRecalcuation();
+
+                    if (voxelGroup.IsLoaded) throw new Exception("Voxel Already Loaded");
+
+                    var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
 
                     for(var voxelX = 0; voxelX < VoxelSize; voxelX++)
                     {
@@ -84,49 +89,23 @@ public class VoxelRoot : MonoBehaviour
 
                             for (var voxelY = 0; voxelY < clampedHeight; voxelY++)
                             {
-                                //var voxelCoordinate = calc.CalculateId(new Vector3(voxelX, voxelY, voxelZ));
-                                voxelGroup.Add(new Vector3(voxelX, voxelY, voxelZ), VoxelType.Grass);
+                                newVoxelContent[voxelX, voxelY, voxelZ] = new VoxelBlock { VoxelType = VoxelType.Grass };
                             }
                         }
                     }
 
+                    voxelGroup.LoadVoxelContent(newVoxelContent);
+
                     CurrentLoadedArea++;
                     Debug.Log(stopWatch.Elapsed);
-
-                    yield return null;
                 }
             }
+
         }
         stopWatch.Stop();
         Debug.Log("Initial Voxel Creation" + stopWatch.Elapsed);
 
-
-        
-        //for (var x = TerrainXMin; x < TerrainXMax; x++)
-        //{
-        //    for (var z = TerrainZMin; z < TerrainZMax; z++)
-        //    {
-        //        stopWatch.Restart();
-        //        int y = GetTerrainHeight(x, z);
-
-        //        for (var height = -VoxelSize; height < y; height++)
-        //        {
-        //            var voxelId = calc.CalculateId(new Vector3(x, height, z));
-        //            var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
-        //        }
-
-        //        var voxelId2 = calc.CalculateId(new Vector3(x, y, z));
-        //        var voxelGroup2 = GetOrCreateVoxelGroup(voxelId2.VoxelGroupId);
-        //        voxelGroup2.Add(voxelId2.VoxelLocalPosition, VoxelType.Grass);
-
-        //        stopWatch.Stop();
-
-        //        CurrentLoadedArea++;
-        //        Debug.Log(stopWatch.Elapsed);
-
-        //        yield return null;
-        //    }
-        //}
+        yield return null;
 
         stopWatch.Restart();
 
@@ -134,11 +113,24 @@ public class VoxelRoot : MonoBehaviour
 
         foreach (var group in VoxelGroups)
         {
-            group.Value.ResumeMeshRecalcuation();
+            group.Value.RecalculateMesh();
             yield return null;
         }
 
+        //var groups = VoxelGroups.ToArray();
+        //for (var i = 0; i < groups.Count(); i += 5)
+        //{
+        //    var groupsToRegen = groups.Skip(i).Take(5).ToArray();
+        //    foreach(var group in groupsToRegen)
+        //    {
+        //        group.Value.RecalculateMesh();
+        //    }
+        //    yield return null;
+        //}
+
         Debug.Log("Finished recalculating " + stopWatch.Elapsed);
+
+        OnMapLoadComplete?.Invoke();
 
         yield return null;
     }
@@ -216,7 +208,6 @@ public class VoxelRoot : MonoBehaviour
 
     private VoxelGroup GetOrCreateVoxelGroup(string voxelId)
     {
-        //Debug.Log(voxelId);
         if (VoxelGroups.ContainsKey(voxelId)) return VoxelGroups[voxelId];
 
         var position = GetPointForId(voxelId);

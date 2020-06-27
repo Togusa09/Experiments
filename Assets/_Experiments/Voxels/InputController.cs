@@ -9,12 +9,15 @@ public class InputController : MonoBehaviour
     [SerializeField]
     MapGenPanel _mapGenPanel;
 
+    [SerializeField]
+    VoxelRoot _voxelRoot;
+
     // Start is called before the first frame update
     void Start()
     {
         _player.PlayerState = PlayerState.ControlDisabled;
 
-        _mapGenPanel.OnMapGenerated += HideMenu;
+        _voxelRoot.OnMapLoadComplete += HideMenu;
     }
 
     public void ShowMenu()

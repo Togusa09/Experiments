@@ -400,6 +400,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _player: {fileID: 1191125950}
   _mapGenPanel: {fileID: 1625691969}
+  _voxelRoot: {fileID: 1899757870}
 --- !u!1 &425381237
 GameObject:
   m_ObjectHideFlags: 0
@@ -1697,10 +1698,10 @@ MonoBehaviour:
   VoxelGroupPrefab: {fileID: 7374939344958186296, guid: 5134c5d174952cd488f167923a3fba8a,
     type: 3}
   VoxelSize: 20
-  TerrainXMin: -1000
-  TerrainXMax: 1000
-  TerrainZMin: -1000
-  TerrainZMax: 1000
+  TerrainXMin: -100
+  TerrainXMax: 100
+  TerrainZMin: -100
+  TerrainZMax: 100
   TerrainYMin: -40
   TerrainYMax: 40
 --- !u!1 &1957292185

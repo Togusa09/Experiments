@@ -22,7 +22,8 @@ namespace Experimental.Voxel
         private bool hasTarget;
 
         private PlayerState _playerState;
-        public PlayerState PlayerState {
+        public PlayerState PlayerState 
+        {
             get
             {
                 return _playerState;
@@ -31,15 +32,26 @@ namespace Experimental.Voxel
             {
                 if (value == PlayerState.Normal || value == PlayerState.Flying)
                 {
-                    GetComponent<MouseLook>().enabled = false;
-                    GetComponentInChildren<MouseLook>().enabled = false;
-                    GetComponent<Player>().enabled = false;
-                }
-                else
-                {
                     GetComponent<MouseLook>().enabled = true;
                     GetComponentInChildren<MouseLook>().enabled = true;
                     GetComponent<Player>().enabled = true;
+
+                    if (value == PlayerState.Normal) 
+                    {
+                        GetComponent<Rigidbody>().isKinematic = false;
+                        GetComponent<Rigidbody>().useGravity = true;
+                    }
+                    else
+                    {
+                        GetComponent<Rigidbody>().isKinematic = true;
+                        GetComponent<Rigidbody>().useGravity = false;
+                    }
+                }
+                else
+                {                   
+                    GetComponent<MouseLook>().enabled = false;
+                    GetComponentInChildren<MouseLook>().enabled = false;
+                    GetComponent<Player>().enabled = false;
                 }
 
                 _playerState = value;
