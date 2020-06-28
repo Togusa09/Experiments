@@ -22,6 +22,9 @@ namespace Experimental.Voxel
 
         private bool _isLoaded;
         public bool IsLoaded => _isLoaded;
+
+        private bool _meshChanged = false;
+        public bool MeshChanged => _meshChanged;
         
         public string Id { get;  set; }
 
@@ -33,6 +36,8 @@ namespace Experimental.Voxel
 
         private void CalculateMesh()
         {
+            if (!_meshChanged) return;
+
             var meshVertices = new List<Vector3>();
             var meshUVs = new List<Vector2>();
 
@@ -70,6 +75,8 @@ namespace Experimental.Voxel
 
             GetComponent<MeshFilter>().mesh = mesh;
             GetComponent<MeshCollider>().sharedMesh = mesh;
+
+            _meshChanged = false;
         }
 
         private Directions MeshDirections(int x, int y, int z)
@@ -127,6 +134,7 @@ namespace Experimental.Voxel
 
             Voxels[x, y, z].VoxelType = type;
 
+            _meshChanged = true;
             CalculateMesh();
         }
 
@@ -141,7 +149,7 @@ namespace Experimental.Voxel
         public void LoadVoxelContent(VoxelBlock[,,] voxelContent)
         {
             Array.Copy(voxelContent, Voxels, voxelContent.Length);
-
+            _meshChanged = true;
             _isLoaded = true;
         }
 

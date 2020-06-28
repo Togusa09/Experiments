@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿using Experimental.Voxel;
+using UnityEngine;
 
 
 public class VoxelCoordinate
 {
-    public string VoxelGroupId;
+    public string IdString { get { return $"{IdVec.x}|{IdVec.y}|{IdVec.z}"; } }
+    public Vector3Int IdVec;
     public Vector3Int VoxelLocalPosition;
     public Vector3Int VoxelGroupPosition;
 }
@@ -16,6 +18,16 @@ public class VoxelCoordinateCalculator
     public VoxelCoordinateCalculator(int voxelSize)
     {
         _voxelSize = voxelSize;
+    }
+
+    public VoxelCoordinate GetVoxelForId(int x, int y, int z)
+    {
+        return new VoxelCoordinate
+        {
+            IdVec = new Vector3Int(x, y, z),
+            VoxelGroupPosition = new Vector3Int(x * _voxelSize, y * _voxelSize, z * _voxelSize),
+            VoxelLocalPosition = new Vector3Int(0, 0, 0),
+        };
     }
 
     public VoxelCoordinate CalculateId(Vector3 coordinate)
@@ -34,7 +46,7 @@ public class VoxelCoordinateCalculator
             
         return new VoxelCoordinate
         {
-            VoxelGroupId = $"{xGroupId}|{yGroupId}|{zGroupId}",
+            IdVec = new Vector3Int(xGroupId, yGroupId, zGroupId),
             VoxelGroupPosition = voxelGroupPosition,
             VoxelLocalPosition = localPosition,
         };

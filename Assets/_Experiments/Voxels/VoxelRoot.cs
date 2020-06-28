@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -10,16 +11,11 @@ public class VoxelRoot : MonoBehaviour
     public Player Player;
     public VoxelGroup VoxelGroupPrefab;
     
-    public int VoxelSize = 10;
-    public int TerrainXMin = -1000;
-    public int TerrainXMax = 1000;
-    public int TerrainZMin = -1000;
-    public int TerrainZMax = 1000;
-
-    public int TerrainYMin = -50;
-    public int TerrainYMax = 50;
+    public int VoxelSize = 20;
 
     public Action OnMapLoadComplete;
+
+    private bool _initialLoadComplete = false;
 
     Dictionary<string, VoxelGroup> VoxelGroups = new Dictionary<string, VoxelGroup>();
 
@@ -27,7 +23,7 @@ public class VoxelRoot : MonoBehaviour
     private int _selectedVoxelTypeIndex = 0;
     private VoxelType CurrentVoxelType => _placeableVoxelTypes[_selectedVoxelTypeIndex];
 
-    public int TotalArea => (TerrainXMax - TerrainXMin) * (TerrainZMax - TerrainZMin);
+    public int TotalArea => 10;// (TerrainXMax - TerrainXMin) * (TerrainZMax - TerrainZMin);
     public int CurrentLoadedArea { get; private set; }
 
     // Start is called before the first frame update
@@ -54,85 +50,97 @@ public class VoxelRoot : MonoBehaviour
 
     private IEnumerator SeedEnvironment()
     {
-        var calc = new VoxelCoordinateCalculator(VoxelSize);
-
-        var stopWatch = new System.Diagnostics.Stopwatch();
-
-        stopWatch.Start();
-
-                // Generate required VoxelGroups
-        for (var x = TerrainXMin; x < TerrainXMax; x += VoxelSize)
+        while (true)
         {
-            for (var y = TerrainYMin; y < TerrainYMax; y += VoxelSize)
+            var calc = new VoxelCoordinateCalculator(VoxelSize);
+
+            var stopWatch = new System.Diagnostics.Stopwatch();
+
+            stopWatch.Start();
+
+            var renderDistance = 4;
+            var verticalRenderDistance = 2;
+
+            var playerVoxel = calc.CalculateId(Player.transform.position);
+
+            for (var x = playerVoxel.IdVec.x - renderDistance; x < playerVoxel.IdVec.x + renderDistance; x++)
             {
-                for (var z = TerrainZMin; z < TerrainZMax; z += VoxelSize)
+                for (var y = playerVoxel.IdVec.y - verticalRenderDistance; y < playerVoxel.IdVec.y + verticalRenderDistance; y++)
                 {
-                    stopWatch.Restart();
-
-                    var voxelId = calc.CalculateId(new Vector3(x, y, z));
-                    var voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
-
-                    if (voxelGroup.IsLoaded) throw new Exception("Voxel Already Loaded");
-
-                    var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
-
-                    for(var voxelX = 0; voxelX < VoxelSize; voxelX++)
+                    for (var z = playerVoxel.IdVec.z - renderDistance; z < playerVoxel.IdVec.z + renderDistance; z++)
                     {
-                        for (var voxelZ = 0; voxelZ < VoxelSize; voxelZ++)
+                        var voxelPosDiff = (playerVoxel.IdVec - new Vector3(x, playerVoxel.IdVec.y, z)).magnitude;
+                        if (voxelPosDiff > renderDistance) continue;
+
+                        stopWatch.Restart();
+
+                        var voxelId = calc.GetVoxelForId(x, y, z);
+                        var voxelGroup = GetOrCreateVoxelGroup(voxelId.IdString);
+
+                        if (voxelGroup.IsLoaded) continue;
+
+                        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
+
+                        for (var voxelX = 0; voxelX < VoxelSize; voxelX++)
                         {
-                            if (voxelId.VoxelGroupPosition.x + voxelX < TerrainXMin || voxelId.VoxelGroupPosition.x + voxelX > TerrainXMax) continue;
-                            if (voxelId.VoxelGroupPosition.z + voxelZ < TerrainZMin || voxelId.VoxelGroupPosition.z + voxelX > TerrainZMax) continue;
-
-                            var terrainHeight = GetTerrainHeight(voxelId.VoxelGroupPosition.x + voxelX, voxelId.VoxelGroupPosition.z + voxelZ);
-                            var relativeTerainHeight = terrainHeight - voxelId.VoxelGroupPosition.y;
-                            var clampedHeight = (int)Mathf.Clamp(relativeTerainHeight, 0, VoxelSize);
-
-                            for (var voxelY = 0; voxelY < clampedHeight; voxelY++)
+                            for (var voxelZ = 0; voxelZ < VoxelSize; voxelZ++)
                             {
-                                newVoxelContent[voxelX, voxelY, voxelZ] = new VoxelBlock { VoxelType = VoxelType.Grass };
+                                var terrainHeight = GetTerrainHeight(voxelId.VoxelGroupPosition.x + voxelX, voxelId.VoxelGroupPosition.z + voxelZ);
+                                var relativeTerainHeight = terrainHeight - voxelId.VoxelGroupPosition.y;
+                                var clampedHeight = (int)Mathf.Clamp(relativeTerainHeight, 0, VoxelSize);
+
+                                for (var voxelY = 0; voxelY < clampedHeight; voxelY++)
+                                {
+                                    newVoxelContent[voxelX, voxelY, voxelZ] = new VoxelBlock { VoxelType = VoxelType.Grass };
+                                }
                             }
                         }
+
+                        voxelGroup.LoadVoxelContent(newVoxelContent);
+
+                        CurrentLoadedArea++;
+                        Debug.Log(stopWatch.Elapsed);
                     }
-
-                    voxelGroup.LoadVoxelContent(newVoxelContent);
-
-                    CurrentLoadedArea++;
-                    Debug.Log(stopWatch.Elapsed);
                 }
             }
 
-        }
-        stopWatch.Stop();
-        Debug.Log("Initial Voxel Creation" + stopWatch.Elapsed);
+            stopWatch.Stop();
+            Debug.Log("Initial Voxel Creation" + stopWatch.Elapsed);
 
-        yield return null;
+            yield return null;
 
-        stopWatch.Restart();
+            stopWatch.Restart();
 
-        Debug.Log("Recalculating");
+            Debug.Log("Recalculating");
 
-        foreach (var group in VoxelGroups)
-        {
-            group.Value.RecalculateMesh();
+            foreach (var group in VoxelGroups.Where(x => x.Value.MeshChanged).ToArray())
+            {
+                group.Value.RecalculateMesh();
+                yield return null;
+            }
+
+            //var groups = VoxelGroups.ToArray();
+            //for (var i = 0; i < groups.Count(); i += 5)
+            //{
+            //    var groupsToRegen = groups.Skip(i).Take(5).ToArray();
+            //    foreach(var group in groupsToRegen)
+            //    {
+            //        group.Value.RecalculateMesh();
+            //    }
+            //    yield return null;
+            //}
+
+            Debug.Log("Finished recalculating " + stopWatch.Elapsed);
+
+            if (!_initialLoadComplete)
+            {
+                OnMapLoadComplete?.Invoke();
+            }
+
+            _initialLoadComplete = true;
+
             yield return null;
         }
-
-        //var groups = VoxelGroups.ToArray();
-        //for (var i = 0; i < groups.Count(); i += 5)
-        //{
-        //    var groupsToRegen = groups.Skip(i).Take(5).ToArray();
-        //    foreach(var group in groupsToRegen)
-        //    {
-        //        group.Value.RecalculateMesh();
-        //    }
-        //    yield return null;
-        //}
-
-        Debug.Log("Finished recalculating " + stopWatch.Elapsed);
-
-        OnMapLoadComplete?.Invoke();
-
-        yield return null;
     }
 
     private int GetTerrainHeight(float x, float z)
@@ -141,7 +149,7 @@ public class VoxelRoot : MonoBehaviour
         float xCoord = 1566f + x / 40f * scale;
         float zCoord = 5000f + z / 40f * scale;
 
-        var y = (int)((Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * (TerrainYMax * 2));
+        var y = (int)((Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * (40 * 2));
         return y;
     }
 
@@ -184,13 +192,13 @@ public class VoxelRoot : MonoBehaviour
 
         VoxelGroup voxelGroup;
 
-        if (voxelId.VoxelGroupId == hitVoxelGroup.Id)
+        if (voxelId.IdString == hitVoxelGroup.Id)
         {
             voxelGroup = hitVoxelGroup;
         }
         else
         {
-            voxelGroup = GetOrCreateVoxelGroup(voxelId.VoxelGroupId);
+            voxelGroup = GetOrCreateVoxelGroup(voxelId.IdString);
         }
 
         if (buttonId == 0)
