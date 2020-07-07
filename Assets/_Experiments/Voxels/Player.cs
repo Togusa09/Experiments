@@ -11,15 +11,22 @@ namespace Experimental.Voxel
         Flying
     }
 
+    
+
     public class Player : MonoBehaviour
     {
         public Action<RaycastHit, int> OnPlayerClick;
         public Camera Camera;
 
         public float speed = 1.0f;
+        public float jumpForce = 2.0f;
 
         private RaycastHit _targetHit;
         private bool hasTarget;
+
+        private Rigidbody rb;
+
+        private CapsuleCollider collider;
 
         private PlayerState _playerState;
         public PlayerState PlayerState 
@@ -48,7 +55,9 @@ namespace Experimental.Voxel
                     }
                 }
                 else
-                {                   
+                {
+                    var childMouseLook = GetComponentInChildren<MouseLook>();
+
                     GetComponent<MouseLook>().enabled = false;
                     GetComponentInChildren<MouseLook>().enabled = false;
                     GetComponent<Player>().enabled = false;
@@ -68,6 +77,9 @@ namespace Experimental.Voxel
             //lr.startWidth = 0.01f;
             //lr.endWidth = 0.01f;
             lr.widthMultiplier = 0.1f;
+
+            rb = GetComponent<Rigidbody>();
+            collider = GetComponent<CapsuleCollider>();
         }
 
         // Update is called once per frame
@@ -120,8 +132,6 @@ namespace Experimental.Voxel
                 Gizmos.DrawSphere(_targetHit.point, 0.1f);
                 Gizmos.DrawLine(_targetHit.point, _targetHit.point + _targetHit.normal);
 
-                
-
                 //var voxelPlacePos = VoxelPointHelper.PointToCubePlaceLocation(_targetHit);
                 //var voxelRemovePos = VoxelPointHelper.PointToCubeRemoveLocation(_targetHit);
 
@@ -134,40 +144,47 @@ namespace Experimental.Voxel
             }
         }
 
-        //public void OnKey(KeyCode keyCode)
-        //{
-        //    var translation = Vector3.zero;
 
-        //    switch (keyCode)
-        //    {
-        //        case KeyCode.W:
-        //            translation += transform.forward;
-        //            break;
-        //        case KeyCode.S:
-        //            translation -= transform.forward;
-        //            break;
-        //        case KeyCode.A:
-        //            translation -= transform.right;
-        //            break;
-        //        case KeyCode.D:
-        //            translation += transform.right;
-        //            break;
-        //        case KeyCode.Space:
-        //            translation += transform.up;
-        //            break;
-        //        case KeyCode.LeftShift:
-        //            translation -= transform.up;
-        //            break;
-        //    }
-
-        //    translation = translation.normalized * speed * Time.deltaTime;
-
-        //    transform.position += translation;
-        //}
+        private bool IsGrounded()
+        {
+            return Physics.CheckCapsule(collider.bounds.center, new Vector3(collider.bounds.center.x, collider.bounds.min.y, collider.bounds.center.z), collider.height *0.9f, LayerMask.GetMask("Terrain"));
+        }
 
         public void ProcessMovement()
         {
-            if (PlayerState == PlayerState.Normal || PlayerState == PlayerState.Flying)
+            if (PlayerState == PlayerState.Normal)
+            {
+                var translation = Vector3.zero;
+
+                if (Input.GetKey(KeyCode.W))
+                {
+                    translation += transform.forward;
+                }
+                if (Input.GetKey(KeyCode.S))
+                {
+                    translation -= transform.forward;
+                }
+                if (Input.GetKey(KeyCode.A))
+                {
+                    translation -= transform.right;
+                }
+                if (Input.GetKey(KeyCode.D))
+                {
+                    translation += transform.right;
+                }
+                if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+                {
+                    var jump = new Vector3(0.0f, 25.0f, 0.0f); 
+                    rb.AddForce(jump * jumpForce, ForceMode.Impulse);
+                }
+
+                translation = translation.normalized * speed * Time.deltaTime;
+
+                transform.position += translation;
+            }
+
+
+            if (PlayerState == PlayerState.Flying)
             {
                 var translation = Vector3.zero;
 

@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -26,10 +25,12 @@ public class VoxelRoot : MonoBehaviour
     public int TotalArea => 10;// (TerrainXMax - TerrainXMin) * (TerrainZMax - TerrainZMin);
     public int CurrentLoadedArea { get; private set; }
 
+    private int _terrainLayerMask;
+
     // Start is called before the first frame update
     void Start()
     {
-               
+        _terrainLayerMask = LayerMask.NameToLayer("Terrain");
     }
 
     public void DestroyWorld()
@@ -42,20 +43,20 @@ public class VoxelRoot : MonoBehaviour
         }
     }
 
-    public void GenerateMap() 
+    public void GenerateMap(string worldSeed) 
     {
-        StartCoroutine(SeedEnvironment());
+        StartCoroutine(SeedEnvironment(worldSeed));
         Player.OnPlayerClick += PlayerClick;
     }
 
-    private IEnumerator SeedEnvironment()
+    private IEnumerator SeedEnvironment(string worldSeed)
     {
+        var worldGenerator = new WorldGenerator(worldSeed);
+        var calc = new VoxelCoordinateCalculator(VoxelSize);
+        var stopWatch = new System.Diagnostics.Stopwatch();
+
         while (true)
         {
-            var calc = new VoxelCoordinateCalculator(VoxelSize);
-
-            var stopWatch = new System.Diagnostics.Stopwatch();
-
             stopWatch.Start();
 
             var renderDistance = 4;
@@ -85,7 +86,7 @@ public class VoxelRoot : MonoBehaviour
                         {
                             for (var voxelZ = 0; voxelZ < VoxelSize; voxelZ++)
                             {
-                                var terrainHeight = GetTerrainHeight(voxelId.VoxelGroupPosition.x + voxelX, voxelId.VoxelGroupPosition.z + voxelZ);
+                                var terrainHeight = worldGenerator.GetTerrainHeight(voxelId.VoxelGroupPosition.x + voxelX, voxelId.VoxelGroupPosition.z + voxelZ);
                                 var relativeTerainHeight = terrainHeight - voxelId.VoxelGroupPosition.y;
                                 var clampedHeight = (int)Mathf.Clamp(relativeTerainHeight, 0, VoxelSize);
 
@@ -143,15 +144,7 @@ public class VoxelRoot : MonoBehaviour
         }
     }
 
-    private int GetTerrainHeight(float x, float z)
-    {
-        var scale = 1.0f;
-        float xCoord = 1566f + x / 40f * scale;
-        float zCoord = 5000f + z / 40f * scale;
 
-        var y = (int)((Mathf.PerlinNoise(xCoord, zCoord) - 0.5f) * (40 * 2));
-        return y;
-    }
 
     private void Update()
     {
@@ -221,12 +214,12 @@ public class VoxelRoot : MonoBehaviour
         var position = GetPointForId(voxelId);
 
         var voxelGroup = Instantiate(VoxelGroupPrefab, position, Quaternion.identity, transform);
+        voxelGroup.gameObject.layer = _terrainLayerMask;
         voxelGroup.Id = voxelId;
         voxelGroup.SetVoxelSize(VoxelSize);
         VoxelGroups[voxelId] = voxelGroup;
         return voxelGroup;
     }
-
 
     private Vector3Int GetPointForId(string id)
     {

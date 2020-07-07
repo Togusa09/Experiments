@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Experimental.Voxel
@@ -26,7 +23,7 @@ namespace Experimental.Voxel
         public void GenerateMap()
         {
             VoxelRoot.DestroyWorld();
-            VoxelRoot.GenerateMap();
+            VoxelRoot.GenerateMap(SeedInput.text);
         }
 
         // Start is called before the first frame update
