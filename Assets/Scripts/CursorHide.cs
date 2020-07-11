@@ -9,10 +9,4 @@ public class CursorHide : MonoBehaviour
     {
         Cursor.visible = false;
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

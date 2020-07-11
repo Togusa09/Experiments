@@ -27,18 +27,29 @@ namespace Experimental.Voxel
         
         public string Id { get;  set; }
 
-        // Start is called before the first frame update
-        void Start()
-        {
-            
-        }
-
         private void CalculateMesh()
         {
             if (!_meshChanged) return;
 
-            var meshVertices = new List<Vector3>();
-            var meshUVs = new List<Vector2>();
+            var numberOfVertices = 0;
+
+            for (var x = 0; x < Voxels.GetLength(0); x++)
+            {
+                for (var y = 0; y < Voxels.GetLength(1); y++)
+                {
+                    for (var z = 0; z < Voxels.GetLength(2); z++)
+                    {
+                        if (Voxels[x, y, z].VoxelType == VoxelType.Air) continue;
+                        var directions = MeshDirections(x, y, z);
+                        numberOfVertices += NumberOfSetBits((int)directions) * 4;
+                    }
+                }
+            }
+
+            var meshVertices = new Vector3[numberOfVertices];
+            var meshUVs = new Vector2[numberOfVertices];
+
+            var vertexIndex = 0;
 
             for (var x = 0; x < Voxels.GetLength(0); x++)
             {
@@ -51,22 +62,23 @@ namespace Experimental.Voxel
 
                         if (currentVoxel.VoxelType != VoxelType.Air)
                         {
-                            Vector3[] vertices = GetVerticesForPosition(new Vector3(x, y, z), directions);
-                            meshVertices.AddRange(vertices);
+                            var numberOfSetBits = NumberOfSetBits((int)directions);
 
-                            Vector2[] uvs = GetUVs(currentVoxel.VoxelType, directions);
-                            meshUVs.AddRange(uvs);
+                            GetVerticesForPosition(new Vector3(x, y, z), directions, numberOfSetBits, meshVertices, vertexIndex);
+                            GetUVs(currentVoxel.VoxelType, directions, numberOfSetBits, meshUVs, vertexIndex);
+
+                            vertexIndex += (numberOfSetBits * 4);
                         }
                     }
                 }
             }
 
-            var meshTriangles = GenerateMeshTriangles(meshVertices.Count);
+            var meshTriangles = GenerateMeshTriangles(vertexIndex);
 
             Mesh mesh = new Mesh();
 
-            mesh.vertices = meshVertices.ToArray();
-            mesh.uv = meshUVs.ToArray();
+            mesh.vertices = meshVertices;
+            mesh.uv = meshUVs;
             mesh.triangles = meshTriangles;
             mesh.RecalculateNormals();
             mesh.Optimize();
@@ -157,17 +169,13 @@ namespace Experimental.Voxel
             return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
         }
 
-        private Vector2[] GetUVs(VoxelType voxelType, Directions directions)
+        private void GetUVs(VoxelType voxelType, Directions directions, int numberOfSetBits, Vector2[] uvs, int uvIndex)
         {
             var uvOrigin = textureUvs[voxelType];
             var textureSize = 0.25f;
 
             // Code is currently repetetive due to future intention to have different texture mappings on each side
 
-            var numberOfSetBits = NumberOfSetBits((int)directions);
-            var uvs = new Vector2[numberOfSetBits * 4];
-            var uvIndex = 0;
-
             if ((directions & Directions.ZNeg) == Directions.ZNeg)
             {
                 uvs[uvIndex + 0] = uvOrigin + new Vector2(0, textureSize);
@@ -221,84 +229,6 @@ namespace Experimental.Voxel
                 uvs[uvIndex + 3] = uvOrigin + new Vector2(textureSize, 0);
                 uvIndex += 4;
             }
-
-            return uvs;
-        }
-
-        private Vector2[] GetUVsOld(VoxelType voxelType, Directions directions)
-        {
-            var uvOrigin = textureUvs[voxelType];
-            var textureSize = 0.25f;
-
-            var uvs = new List<Vector2>();
-
-            if ((directions & Directions.ZNeg) == Directions.ZNeg)
-            {
-                uvs.AddRange(new[]
-                {
-                    uvOrigin + new Vector2(0, textureSize),
-                    uvOrigin, //new Vector2(0, 0),
-                    uvOrigin + new Vector2(textureSize, textureSize),
-                    uvOrigin + new Vector2(textureSize, 0),
-                });
-            }
-
-            if ((directions & Directions.XPos) == Directions.XPos)
-            {
-                uvs.AddRange(new[]
-                {
-                    uvOrigin + new Vector2(0, textureSize),
-                    uvOrigin,
-                    uvOrigin + new Vector2(textureSize, textureSize),
-                    uvOrigin + new Vector2(textureSize, 0),
-                });
-            }
-
-            if ((directions & Directions.ZPos) == Directions.ZPos)
-            {
-                uvs.AddRange(new[]
-                {
-                    uvOrigin + new Vector2(0, textureSize),
-                    uvOrigin,
-                    uvOrigin + new Vector2(textureSize, textureSize),
-                    uvOrigin + new Vector2(textureSize, 0),
-                });
-            }
-
-            if ((directions & Directions.XNeg) == Directions.XNeg)
-            {
-                uvs.AddRange(new[]
-                {
-                    uvOrigin + new Vector2(0, textureSize),
-                    uvOrigin,
-                    uvOrigin + new Vector2(textureSize, textureSize),
-                    uvOrigin + new Vector2(textureSize, 0),
-                });
-            }
-
-            if ((directions & Directions.YPos) == Directions.YPos)
-            {
-                uvs.AddRange(new[]
-                {
-                    uvOrigin + new Vector2(0, textureSize),
-                    uvOrigin,
-                    uvOrigin + new Vector2(textureSize, textureSize),
-                    uvOrigin + new Vector2(textureSize, 0),
-                });
-            }
-
-            if ((directions & Directions.YNeg) == Directions.YNeg)
-            {
-                uvs.AddRange(new[]
-                {
-                    uvOrigin + new Vector2(0, textureSize),
-                    uvOrigin,
-                    uvOrigin + new Vector2(textureSize, textureSize),
-                    uvOrigin + new Vector2(textureSize, 0),
-                });
-            }
-
-            return uvs.ToArray();
         }
 
         private static int[] GenerateMeshTriangles(int vertexCount)
@@ -323,12 +253,8 @@ namespace Experimental.Voxel
             return triangles;
         }
 
-        private Vector3[] GetVerticesForPosition(Vector3 position, Directions directions)
+        private void GetVerticesForPosition(Vector3 position, Directions directions, int numberOfSetBits, Vector3[] verticies, int vertexIndex)
         {
-            var numberOfSetBits = NumberOfSetBits((int)directions);
-            var verticies = new Vector3[numberOfSetBits * 4];
-            var vertexIndex = 0;
-
             if ((directions & Directions.ZNeg) == Directions.ZNeg)
             {
                 verticies[vertexIndex] = new Vector3(position.x, position.y, position.z);
@@ -382,8 +308,6 @@ namespace Experimental.Voxel
                 verticies[vertexIndex + 3] = new Vector3(position.x + 1, position.y, position.z);
                 vertexIndex += 4;
             }
-
-            return verticies;
         }
     }
 }

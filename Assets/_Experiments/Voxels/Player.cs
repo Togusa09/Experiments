@@ -11,8 +11,6 @@ namespace Experimental.Voxel
         Flying
     }
 
-    
-
     public class Player : MonoBehaviour
     {
         public Action<RaycastHit, int> OnPlayerClick;

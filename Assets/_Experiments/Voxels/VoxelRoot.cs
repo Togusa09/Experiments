@@ -79,15 +79,11 @@ public class VoxelRoot : MonoBehaviour
                         CreateVoxel(playerVoxel, x, y, z, renderDistance, calc, newVoxelContent, worldGenerator);
 
                         CurrentLoadedArea++;
-
-                        //yield return null;
                     }
-                    
                 }
             }
 
             stopWatch.Stop();
-            Debug.Log("Initial Voxel Creation" + stopWatch.Elapsed);
 
             yield return null;
 
@@ -143,8 +139,6 @@ public class VoxelRoot : MonoBehaviour
                 calculationStopWatch.Restart();
                 group.Value.RecalculateMesh();
                 calculationStopWatch.Stop();
-                Debug.Log("Recalculated " + calculationStopWatch.ElapsedMilliseconds);
-         
             }
 
             //var groups = VoxelGroups.ToArray();
