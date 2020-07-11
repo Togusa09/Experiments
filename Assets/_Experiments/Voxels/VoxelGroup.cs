@@ -55,7 +55,6 @@ namespace Experimental.Voxel
                             meshVertices.AddRange(vertices);
 
                             Vector2[] uvs = GetUVs(currentVoxel.VoxelType, directions);
-                            //Vector2[] oldUvs = GetUVsOld(currentVoxel.VoxelType, directions);
                             meshUVs.AddRange(uvs);
                         }
                     }
@@ -107,7 +106,6 @@ namespace Experimental.Voxel
         {
             CalculateMesh();
         }
-
 
         internal void Add(Vector3 voxelPos, VoxelType voxelType)
         {
@@ -306,7 +304,6 @@ namespace Experimental.Voxel
         private static int[] GenerateMeshTriangles(int vertexCount)
         {
             var faceCount = vertexCount / 4;
-            //var triangles = new List<int>();
 
             var triangles = new int[faceCount * 6];
             var faceIndex = 0;
@@ -321,26 +318,13 @@ namespace Experimental.Voxel
                 triangles[faceIndex + 5] = 2 + i;
 
                 faceIndex += 6;
-                //triangles.AddRange(new int[]
-                //{
-                //    0 + i,
-                //    2 + i,
-                //    1 + i,
-
-                //    0 + i,
-                //    3 + i,
-                //    2 + i
-                //});
             }
 
             return triangles;
-            //return triangles.ToArray();
         }
 
         private Vector3[] GetVerticesForPosition(Vector3 position, Directions directions)
         {
-            //var verticies = new List<Vector3>();
-
             var numberOfSetBits = NumberOfSetBits((int)directions);
             var verticies = new Vector3[numberOfSetBits * 4];
             var vertexIndex = 0;
@@ -352,14 +336,6 @@ namespace Experimental.Voxel
                 verticies[vertexIndex + 2] = new Vector3(position.x + 1, position.y + 1, position.z);
                 verticies[vertexIndex + 3] = new Vector3(position.x, position.y + 1, position.z);
                 vertexIndex += 4;
-
-                //verticies.AddRange(new Vector3[]
-                //{
-                //    new Vector3(position.x,     position.y,     position.z),
-                //    new Vector3(position.x + 1, position.y,     position.z),
-                //    new Vector3(position.x + 1, position.y + 1, position.z),
-                //    new Vector3(position.x,     position.y + 1, position.z),
-                //});
             }
 
             if ((directions & Directions.XPos) == Directions.XPos)
@@ -408,81 +384,6 @@ namespace Experimental.Voxel
             }
 
             return verticies;
-
-            //var verticies = new List<Vector3>();
-
-            //if ((directions & Directions.ZNeg) == Directions.ZNeg)
-            //{
-            //    verticies.AddRange(new Vector3[]
-            //    {
-            //        new Vector3(position.x,     position.y,     position.z),
-            //        new Vector3(position.x + 1, position.y,     position.z),
-            //        new Vector3(position.x + 1, position.y + 1, position.z),
-            //        new Vector3(position.x,     position.y + 1, position.z),
-            //    });
-            //}
-
-            //if ((directions & Directions.XPos) == Directions.XPos)
-            //{
-            //    verticies.AddRange(new Vector3[]
-            //    {
-            //        new Vector3(position.x + 1, position.y,     position.z),
-            //        new Vector3(position.x + 1, position.y,     position.z + 1),
-            //        new Vector3(position.x + 1, position.y + 1, position.z + 1),
-            //        new Vector3(position.x + 1, position.y + 1, position.z),
-            //    });
-            //}
-
-            //if ((directions & Directions.ZPos) == Directions.ZPos)
-            //{
-            //    verticies.AddRange(new Vector3[]
-            //    {
-            //        new Vector3(position.x + 1, position.y,     position.z + 1),
-            //        new Vector3(position.x,     position.y,     position.z + 1),
-            //        new Vector3(position.x,     position.y + 1, position.z + 1),
-            //        new Vector3(position.x + 1, position.y + 1, position.z + 1),
-            //    });
-            //}
-
-            //if ((directions & Directions.XNeg) == Directions.XNeg)
-            //{
-            //    verticies.AddRange(new Vector3[]
-            //    {
-            //        new Vector3(position.x,     position.y,     position.z + 1),
-            //        new Vector3(position.x,     position.y,     position.z),
-            //        new Vector3(position.x,     position.y + 1, position.z),
-            //        new Vector3(position.x,     position.y + 1, position.z + 1),
-            //    });
-            //}
-
-            //if ((directions & Directions.YPos) == Directions.YPos)
-            //{
-            //    verticies.AddRange(new Vector3[]
-            //    {
-            //        new Vector3(position.x,     position.y + 1, position.z),
-            //        new Vector3(position.x + 1, position.y + 1, position.z),
-            //        new Vector3(position.x + 1, position.y + 1, position.z + 1),
-            //        new Vector3(position.x,     position.y + 1, position.z + 1),
-            //    });
-            //}
-
-            //if ((directions & Directions.YNeg) == Directions.YNeg)
-            //{
-            //    verticies.AddRange(new Vector3[]
-            //    {
-            //        new Vector3(position.x,     position.y,     position.z),
-            //        new Vector3(position.x,     position.y,     position.z + 1),
-            //        new Vector3(position.x + 1, position.y,     position.z + 1),
-            //        new Vector3(position.x + 1, position.y,     position.z),
-            //    });
-            //}
-
-            //return verticies.ToArray();
-        }
-
-        private void Update()
-        {
-           
         }
     }
 }

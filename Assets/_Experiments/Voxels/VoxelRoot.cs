@@ -45,65 +45,44 @@ public class VoxelRoot : MonoBehaviour
 
     public void GenerateMap(string worldSeed) 
     {
-        StartCoroutine(SeedEnvironment(worldSeed));
+        StartCoroutine(GenerateVoxelContent(worldSeed));
+        StartCoroutine(GenerateVoxelGeometry());
         Player.OnPlayerClick += PlayerClick;
     }
 
-    private IEnumerator SeedEnvironment(string worldSeed)
+    private IEnumerator GenerateVoxelContent(string worldSeed)
     {
         var worldGenerator = new WorldGenerator(worldSeed);
         var calc = new VoxelCoordinateCalculator(VoxelSize);
         var stopWatch = new System.Diagnostics.Stopwatch();
 
+        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
+
         while (true)
         {
             stopWatch.Start();
 
-            var renderDistance = 4;
+            var renderDistance = 10;
             var verticalRenderDistance = 2;
 
             var playerVoxel = calc.CalculateId(Player.transform.position);
-
+            
             for (var y = playerVoxel.IdVec.y + verticalRenderDistance; y > playerVoxel.IdVec.y - verticalRenderDistance; y--)
             //for (var y = playerVoxel.IdVec.y - verticalRenderDistance; y < playerVoxel.IdVec.y + verticalRenderDistance; y++)
             {
                 for (var x = playerVoxel.IdVec.x - renderDistance; x < playerVoxel.IdVec.x + renderDistance; x++)
                 {
-                
                     for (var z = playerVoxel.IdVec.z - renderDistance; z < playerVoxel.IdVec.z + renderDistance; z++)
                     {
-                        var voxelPosDiff = (playerVoxel.IdVec - new Vector3(x, playerVoxel.IdVec.y, z)).magnitude;
-                        if (voxelPosDiff > renderDistance) continue;
-
                         stopWatch.Restart();
 
-                        var voxelId = calc.GetVoxelForId(x, y, z);
-                        var voxelGroup = GetOrCreateVoxelGroup(voxelId.IdString);
-
-                        if (voxelGroup.IsLoaded) continue;
-
-                        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
-
-                        for (var voxelX = 0; voxelX < VoxelSize; voxelX++)
-                        {
-                            for (var voxelZ = 0; voxelZ < VoxelSize; voxelZ++)
-                            {
-                                var terrainHeight = worldGenerator.GetTerrainHeight(voxelId.VoxelGroupPosition.x + voxelX, voxelId.VoxelGroupPosition.z + voxelZ);
-                                var relativeTerainHeight = terrainHeight - voxelId.VoxelGroupPosition.y;
-                                var clampedHeight = (int)Mathf.Clamp(relativeTerainHeight, 0, VoxelSize);
-
-                                for (var voxelY = 0; voxelY < clampedHeight; voxelY++)
-                                {
-                                    newVoxelContent[voxelX, voxelY, voxelZ] = new VoxelBlock { VoxelType = VoxelType.Grass };
-                                }
-                            }
-                        }
-
-                        voxelGroup.LoadVoxelContent(newVoxelContent);
+                        CreateVoxel(playerVoxel, x, y, z, renderDistance, calc, newVoxelContent, worldGenerator);
 
                         CurrentLoadedArea++;
-                        Debug.Log(stopWatch.Elapsed);
+
+                        //yield return null;
                     }
+                    
                 }
             }
 
@@ -114,12 +93,58 @@ public class VoxelRoot : MonoBehaviour
 
             stopWatch.Restart();
 
+            
+        }
+    }
+
+    void CreateVoxel(VoxelCoordinate playerVoxel, int x, int y, int z, int renderDistance, VoxelCoordinateCalculator calc, VoxelBlock[,,] newVoxelContent, WorldGenerator worldGenerator)
+    {
+        var voxelPosDiff = (playerVoxel.IdVec - new Vector3(x, playerVoxel.IdVec.y, z)).magnitude;
+        if (voxelPosDiff > renderDistance) return;
+
+        var voxelId = calc.GetVoxelForId(x, y, z);
+        var voxelGroup = GetOrCreateVoxelGroup(voxelId);
+
+        if (voxelGroup.IsLoaded) return;
+
+        Array.Clear(newVoxelContent, 0, newVoxelContent.Length);
+
+        for (var voxelX = 0; voxelX < VoxelSize; voxelX++)
+        {
+            for (var voxelZ = 0; voxelZ < VoxelSize; voxelZ++)
+            {
+                var terrainHeight = worldGenerator.GetTerrainHeight(voxelId.VoxelGroupPosition.x + voxelX, voxelId.VoxelGroupPosition.z + voxelZ);
+                var relativeTerainHeight = terrainHeight - voxelId.VoxelGroupPosition.y;
+                var clampedHeight = (int)Mathf.Clamp(relativeTerainHeight, 0, VoxelSize);
+
+                for (var voxelY = 0; voxelY < clampedHeight; voxelY++)
+                {
+                    newVoxelContent[voxelX, voxelY, voxelZ] = new VoxelBlock { VoxelType = VoxelType.Grass };
+                }
+            }
+        }
+
+        voxelGroup.LoadVoxelContent(newVoxelContent);
+    }
+
+    private IEnumerator GenerateVoxelGeometry()
+    {
+        var stopWatch = new System.Diagnostics.Stopwatch();
+
+        while (true)
+        {
+            stopWatch.Restart();
             Debug.Log("Recalculating");
+
+            var calculationStopWatch = new System.Diagnostics.Stopwatch();
 
             foreach (var group in VoxelGroups.Where(x => x.Value.MeshChanged).ToArray())
             {
+                calculationStopWatch.Restart();
                 group.Value.RecalculateMesh();
-                yield return null;
+                calculationStopWatch.Stop();
+                Debug.Log("Recalculated " + calculationStopWatch.ElapsedMilliseconds);
+         
             }
 
             //var groups = VoxelGroups.ToArray();
@@ -145,8 +170,6 @@ public class VoxelRoot : MonoBehaviour
             yield return null;
         }
     }
-
-
 
     private void Update()
     {
@@ -193,7 +216,7 @@ public class VoxelRoot : MonoBehaviour
         }
         else
         {
-            voxelGroup = GetOrCreateVoxelGroup(voxelId.IdString);
+            voxelGroup = GetOrCreateVoxelGroup(voxelId);
         }
 
         if (buttonId == 0)
@@ -209,17 +232,17 @@ public class VoxelRoot : MonoBehaviour
         }
     }
 
-    private VoxelGroup GetOrCreateVoxelGroup(string voxelId)
+    private VoxelGroup GetOrCreateVoxelGroup(VoxelCoordinate voxelId)
     {
-        if (VoxelGroups.ContainsKey(voxelId)) return VoxelGroups[voxelId];
+        if (VoxelGroups.ContainsKey(voxelId.IdString)) return VoxelGroups[voxelId.IdString];
 
-        var position = GetPointForId(voxelId);
+        var position = GetPointForId(voxelId.IdString);
 
         var voxelGroup = Instantiate(VoxelGroupPrefab, position, Quaternion.identity, transform);
         voxelGroup.gameObject.layer = _terrainLayerMask;
-        voxelGroup.Id = voxelId;
+        voxelGroup.Id = voxelId.IdString;
         voxelGroup.SetVoxelSize(VoxelSize);
-        VoxelGroups[voxelId] = voxelGroup;
+        VoxelGroups[voxelId.IdString] = voxelGroup;
         return voxelGroup;
     }
 

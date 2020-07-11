@@ -2,7 +2,7 @@
 using UnityEngine;
 
 
-public class VoxelCoordinate
+public struct VoxelCoordinate
 {
     public string IdString { get { return $"{IdVec.x}|{IdVec.y}|{IdVec.z}"; } }
     public Vector3Int IdVec;
