@@ -5,5 +5,4 @@ using UnityEngine;
 public class VoxelChunk : MonoBehaviour
 {
     // Start is called before the first frame update
-
 }

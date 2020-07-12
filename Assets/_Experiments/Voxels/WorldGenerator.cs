@@ -8,6 +8,8 @@ public class WorldGenerator
     private Vector2 _largeTerrainOffset;
     private Vector2 _giantTerrainOffset;
 
+    System.Random _random;
+
     public WorldGenerator(string worldSeed)
     {
         _worldSeed = worldSeed;
@@ -22,11 +24,18 @@ public class WorldGenerator
             worldSeedValue = worldSeed.GetHashCode();
         }
 
-        Random.InitState(worldSeedValue);
-        _mediumTerrainOffset = new Vector3(Random.Range(-100000f, 100000f), Random.Range(-100000f, 100000f));
-        _largeTerrainOffset = new Vector3(Random.Range(-100000f, 100000f), Random.Range(-100000f, 100000f));
-        _giantTerrainOffset = new Vector3(Random.Range(-100000f, 100000f), Random.Range(-100000f, 100000f));
-        Random.InitState((int)System.DateTime.Now.Ticks);
+        _random = new System.Random(worldSeedValue);
+        //Random.InitState(worldSeedValue);
+        _mediumTerrainOffset = new Vector3(RandomInRange(-100000f, 100000f), RandomInRange(-100000f, 100000f));
+        _largeTerrainOffset = new Vector3(RandomInRange(-100000f, 100000f), RandomInRange(-100000f, 100000f));
+        _giantTerrainOffset = new Vector3(RandomInRange(-100000f, 100000f), RandomInRange(-100000f, 100000f));
+        //Random.InitState((int)System.DateTime.Now.Ticks);
+    }
+
+    private float RandomInRange(float min, float max)
+    {
+        var number = (float)(_random.NextDouble() * (max - min)) + min;
+        return number;
     }
 
     public int GetTerrainHeight(float x, float z)

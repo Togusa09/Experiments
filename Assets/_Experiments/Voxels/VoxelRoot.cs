@@ -1,9 +1,18 @@
 ﻿using Experimental.Voxel;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
+
+struct VoxelData
+{
+    public VoxelBlock[,,] BlockData;
+    public VoxelCoordinate Coordinate;
+}
 
 public class VoxelRoot : MonoBehaviour
 {
@@ -43,30 +52,34 @@ public class VoxelRoot : MonoBehaviour
         }
     }
 
+    ConcurrentQueue<VoxelData> generatedVoxelContent = new ConcurrentQueue<VoxelData>();
+    ConcurrentQueue<VoxelGroup> generatedGeometryData = new ConcurrentQueue<VoxelGroup>();
+
     public void GenerateMap(string worldSeed) 
     {
-        StartCoroutine(GenerateVoxelContent(worldSeed));
+        
+
+        Task.Run(() => GenerateVoxelData(worldSeed));
+
+        StartCoroutine(InstantiateVoxelEntities(worldSeed));
         StartCoroutine(GenerateVoxelGeometry());
         Player.OnPlayerClick += PlayerClick;
     }
 
-    private IEnumerator GenerateVoxelContent(string worldSeed)
-    {
-        var worldGenerator = new WorldGenerator(worldSeed);
-        var calc = new VoxelCoordinateCalculator(VoxelSize);
-        var stopWatch = new System.Diagnostics.Stopwatch();
+    private List<string> QueuedVoxesl = new List<string>();
 
-        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
+    private void GenerateVoxelData(string worldSeed)
+    {
+        var calc = new VoxelCoordinateCalculator(VoxelSize);
+        var worldGenerator = new WorldGenerator(worldSeed);
 
         while (true)
         {
-            stopWatch.Start();
-
             var renderDistance = 10;
             var verticalRenderDistance = 2;
 
-            var playerVoxel = calc.CalculateId(Player.transform.position);
-            
+            var playerVoxel = _playerVoxel;
+
             for (var y = playerVoxel.IdVec.y + verticalRenderDistance; y > playerVoxel.IdVec.y - verticalRenderDistance; y--)
             //for (var y = playerVoxel.IdVec.y - verticalRenderDistance; y < playerVoxel.IdVec.y + verticalRenderDistance; y++)
             {
@@ -74,34 +87,84 @@ public class VoxelRoot : MonoBehaviour
                 {
                     for (var z = playerVoxel.IdVec.z - renderDistance; z < playerVoxel.IdVec.z + renderDistance; z++)
                     {
-                        stopWatch.Restart();
+                        
 
-                        CreateVoxel(playerVoxel, x, y, z, renderDistance, calc, newVoxelContent, worldGenerator);
+                        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
+                        var voxelId = calc.GetVoxelForId(x, y, z);
+                        if (CreateVoxel(playerVoxel, x, y, z, renderDistance, newVoxelContent, worldGenerator, voxelId))
+                        {
+                            generatedVoxelContent.Enqueue(new VoxelData { BlockData = newVoxelContent, Coordinate = voxelId });
+                            
+                        }
 
                         CurrentLoadedArea++;
                     }
                 }
             }
 
-            stopWatch.Stop();
+            Thread.Sleep(10);
+        }
+    }
+
+    private IEnumerator InstantiateVoxelEntities(string worldSeed)
+    {
+        //var worldGenerator = new WorldGenerator(worldSeed);
+        //var calc = new VoxelCoordinateCalculator(VoxelSize);
+        var stopWatch = new System.Diagnostics.Stopwatch();
+
+        //var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
+
+        while (true)
+        {
+            //stopWatch.Start();
+
+            //var renderDistance = 10;
+            //var verticalRenderDistance = 2;
+
+            //var playerVoxel = calc.CalculateId(Player.transform.position);
+
+            while(generatedVoxelContent.TryDequeue(out VoxelData block))
+            {
+                var voxelGroup = GetOrCreateVoxelGroup(block.Coordinate);
+
+                voxelGroup.LoadVoxelContent(block.BlockData);
+            }
+            
+            //for (var y = playerVoxel.IdVec.y + verticalRenderDistance; y > playerVoxel.IdVec.y - verticalRenderDistance; y--)
+            ////for (var y = playerVoxel.IdVec.y - verticalRenderDistance; y < playerVoxel.IdVec.y + verticalRenderDistance; y++)
+            //{
+            //    for (var x = playerVoxel.IdVec.x - renderDistance; x < playerVoxel.IdVec.x + renderDistance; x++)
+            //    {
+            //        for (var z = playerVoxel.IdVec.z - renderDistance; z < playerVoxel.IdVec.z + renderDistance; z++)
+            //        {
+            //            stopWatch.Restart();
+
+            //            CreateVoxel(playerVoxel, x, y, z, renderDistance, calc, newVoxelContent, worldGenerator);
+
+            //            CurrentLoadedArea++;
+            //        }
+            //    }
+            //}
+
+            //stopWatch.Stop();
 
             yield return null;
 
             stopWatch.Restart();
-
-            
         }
     }
 
-    void CreateVoxel(VoxelCoordinate playerVoxel, int x, int y, int z, int renderDistance, VoxelCoordinateCalculator calc, VoxelBlock[,,] newVoxelContent, WorldGenerator worldGenerator)
+    bool CreateVoxel(VoxelCoordinate playerVoxel, int x, int y, int z, int renderDistance, VoxelBlock[,,] newVoxelContent, WorldGenerator worldGenerator, VoxelCoordinate voxelId)
     {
         var voxelPosDiff = (playerVoxel.IdVec - new Vector3(x, playerVoxel.IdVec.y, z)).magnitude;
-        if (voxelPosDiff > renderDistance) return;
+        if (voxelPosDiff > renderDistance) return false;
 
-        var voxelId = calc.GetVoxelForId(x, y, z);
-        var voxelGroup = GetOrCreateVoxelGroup(voxelId);
+        
+        //        var voxelGroup = GetOrCreateVoxelGroup(voxelId);
 
-        if (voxelGroup.IsLoaded) return;
+        if (QueuedVoxesl.Contains(voxelId.IdString)) return false;
+
+        if (VoxelGroups.ContainsKey(voxelId.IdString)) return false;
 
         Array.Clear(newVoxelContent, 0, newVoxelContent.Length);
 
@@ -119,8 +182,8 @@ public class VoxelRoot : MonoBehaviour
                 }
             }
         }
-
-        voxelGroup.LoadVoxelContent(newVoxelContent);
+        QueuedVoxesl.Add(voxelId.IdString);
+        return true;
     }
 
     private IEnumerator GenerateVoxelGeometry()
@@ -130,7 +193,6 @@ public class VoxelRoot : MonoBehaviour
         while (true)
         {
             stopWatch.Restart();
-            Debug.Log("Recalculating");
 
             var calculationStopWatch = new System.Diagnostics.Stopwatch();
 
@@ -152,7 +214,6 @@ public class VoxelRoot : MonoBehaviour
             //    yield return null;
             //}
 
-            Debug.Log("Finished recalculating " + stopWatch.Elapsed);
 
             if (!_initialLoadComplete)
             {
@@ -165,8 +226,13 @@ public class VoxelRoot : MonoBehaviour
         }
     }
 
+    VoxelCoordinate _playerVoxel;
+
     private void Update()
     {
+        var calc = new VoxelCoordinateCalculator(VoxelSize);
+        _playerVoxel = calc.CalculateId(Player.transform.position);
+
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
             if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward

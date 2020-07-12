@@ -1,7 +1,6 @@
 ﻿using Experimental.Voxel;
 using UnityEngine;
 
-
 public struct VoxelCoordinate
 {
     public string IdString { get { return $"{IdVec.x}|{IdVec.y}|{IdVec.z}"; } }
