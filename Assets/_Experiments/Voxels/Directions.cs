@@ -1,4 +1,4 @@
-﻿enum Directions
+﻿public enum Directions
 {
     XPos = 1, 
     XNeg = 2, 

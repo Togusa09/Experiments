@@ -12,13 +12,6 @@ namespace Experimental.Voxel
         private int _voxelSize;
         private int _voxelSizeMinusOne;
 
-        private Dictionary<VoxelType, Vector2> textureUvs = new Dictionary<VoxelType, Vector2>()
-        {
-            { VoxelType.Ground, new Vector2(0, 0) },
-            { VoxelType.Grass, new Vector2(0.25f, 0) },
-            { VoxelType.Water, new Vector2(0.5f, 0) }
-        };
-
         private bool _isLoaded;
         public bool IsLoaded => _isLoaded;
 
@@ -41,7 +34,7 @@ namespace Experimental.Voxel
                     {
                         if (Voxels[x, y, z].VoxelType == VoxelType.Air) continue;
                         var directions = MeshDirections(x, y, z);
-                        numberOfVertices += NumberOfSetBits((int)directions) * 4;
+                        numberOfVertices += VoxelMeshHelper.NumberOfSetBits((int)directions) * 4;
                     }
                 }
             }
@@ -62,10 +55,10 @@ namespace Experimental.Voxel
 
                         if (currentVoxel.VoxelType != VoxelType.Air)
                         {
-                            var numberOfSetBits = NumberOfSetBits((int)directions);
+                            var numberOfSetBits = VoxelMeshHelper.NumberOfSetBits((int)directions);
 
-                            GetVerticesForPosition(new Vector3(x, y, z), directions, numberOfSetBits, meshVertices, vertexIndex);
-                            GetUVs(currentVoxel.VoxelType, directions, numberOfSetBits, meshUVs, vertexIndex);
+                            VoxelMeshHelper.GetVerticesForPosition(new Vector3(x, y, z), directions, numberOfSetBits, meshVertices, vertexIndex);
+                            VoxelMeshHelper.GetUVs(currentVoxel.VoxelType, directions, numberOfSetBits, meshUVs, vertexIndex);
 
                             vertexIndex += (numberOfSetBits * 4);
                         }
@@ -73,7 +66,7 @@ namespace Experimental.Voxel
                 }
             }
 
-            var meshTriangles = GenerateMeshTriangles(vertexIndex);
+            var meshTriangles = VoxelMeshHelper.GenerateMeshTriangles(vertexIndex);
 
             Mesh mesh = new Mesh();
 
@@ -162,14 +155,26 @@ namespace Experimental.Voxel
             _isLoaded = true;
         }
 
-        int NumberOfSetBits(int i)
+        
+    }
+
+    public static class VoxelMeshHelper
+    {
+        private static Dictionary<VoxelType, Vector2> textureUvs = new Dictionary<VoxelType, Vector2>()
+        {
+            { VoxelType.Ground, new Vector2(0, 0) },
+            { VoxelType.Grass, new Vector2(0.25f, 0) },
+            { VoxelType.Water, new Vector2(0.5f, 0) }
+        };
+
+        public static int NumberOfSetBits(int i)
         {
             i = i - ((i >> 1) & 0x55555555);
             i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
             return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
         }
 
-        private void GetUVs(VoxelType voxelType, Directions directions, int numberOfSetBits, Vector2[] uvs, int uvIndex)
+        public static void GetUVs(VoxelType voxelType, Directions directions, int numberOfSetBits, Vector2[] uvs, int uvIndex)
         {
             var uvOrigin = textureUvs[voxelType];
             var textureSize = 0.25f;
@@ -231,7 +236,7 @@ namespace Experimental.Voxel
             }
         }
 
-        private static int[] GenerateMeshTriangles(int vertexCount)
+        public static int[] GenerateMeshTriangles(int vertexCount)
         {
             var faceCount = vertexCount / 4;
 
@@ -241,11 +246,11 @@ namespace Experimental.Voxel
             for (var i = 0; i < vertexCount; i += 4)
             {
                 triangles[faceIndex] = i;
-                triangles[faceIndex + 1] = 2 + i;
-                triangles[faceIndex + 2] = 1 + i;
+                triangles[faceIndex + 1] = (i + 2);
+                triangles[faceIndex + 2] = (i + 1);
                 triangles[faceIndex + 3] = i;
-                triangles[faceIndex + 4] = 3 + i;
-                triangles[faceIndex + 5] = 2 + i;
+                triangles[faceIndex + 4] = (i + 3);
+                triangles[faceIndex + 5] = (i + 2);
 
                 faceIndex += 6;
             }
@@ -253,7 +258,7 @@ namespace Experimental.Voxel
             return triangles;
         }
 
-        private void GetVerticesForPosition(Vector3 position, Directions directions, int numberOfSetBits, Vector3[] verticies, int vertexIndex)
+        public static void GetVerticesForPosition(Vector3 position, Directions directions, int numberOfSetBits, Vector3[] verticies, int vertexIndex)
         {
             if ((directions & Directions.ZNeg) == Directions.ZNeg)
             {

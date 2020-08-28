@@ -41,7 +41,7 @@ public class WorldGenerator
         var largeTerrainHeight = Mathf.PerlinNoise(largeTerrainPosition.x, largeTerrainPosition.y) - 0.5f;
         var giantTerrainHeight = Mathf.PerlinNoise(giantTerainPosition.x, giantTerainPosition.y) - 0.5f;
 
-        var y = (int)(giantTerrainHeight * 400f + largeTerrainHeight * 60f + baseTerrainHeight * 10f) ;
+        var y = (int)(giantTerrainHeight * 100f + largeTerrainHeight * 60f + baseTerrainHeight * 10f) ;
 
         return y;
     }

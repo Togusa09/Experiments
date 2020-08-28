@@ -24,22 +24,30 @@ namespace Experimental.Voxel
         {
             VoxelRoot.DestroyWorld();
             VoxelRoot.GenerateMap(SeedInput.text);
+            _running = true;
         }
+
+        private bool _running = false;
 
         // Update is called once per frame
         void Update()
         {
-            var loadedArea = VoxelRoot.CurrentLoadedArea;
-            if (loadedArea > 0)
+            if (_running)
             {
-                var progress = ((float)VoxelRoot.CurrentLoadedArea / (float)VoxelRoot.TotalArea) * 100f;
+                VoxelRoot.UpdateMap();
+            }
 
-                ProgressText.text = $"{progress:0.00}";
-            }
-            else
-            {
-                ProgressText.text = "0 %";
-            }
+            //var loadedArea = VoxelRoot.CurrentLoadedArea;
+            //if (loadedArea > 0)
+            //{
+            //    var progress = ((float)VoxelRoot.CurrentLoadedArea / (float)VoxelRoot.TotalArea) * 100f;
+
+            //    ProgressText.text = $"{progress:0.00}";
+            //}
+            //else
+            //{
+            //    ProgressText.text = "0 %";
+            //}
         }
     }
 }
