@@ -55,19 +55,23 @@ public class VoxelRoot : MonoBehaviour
     }
 
     private List<VoxelCoordinate> _VoxelsToCreate = new List<VoxelCoordinate>();
-    //private VoxelCoordinate _currentChunk = new VoxelCoordinate();
+    private VoxelCoordinate _currentChunk = new VoxelCoordinate { VoxelGroupPosition = new Vector3Int(-1, -1, -1)};
 
     private bool _voxelsGenerating = false;
 
     public void UpdateMap(bool instant = false, int renderDistance = 6)
     {
-        var verticalRenderDistance = 2;
-        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];
         var calc = new VoxelCoordinateCalculator(VoxelSize);
         var playerVoxel = calc.CalculateId(Player.transform.position);
-        var worldGenerator = new WorldGenerator(_worldSeed);
-        //_currentChunk = playerVoxel;
 
+        if (_currentChunk == playerVoxel) return;
+        _currentChunk = playerVoxel;
+
+        var verticalRenderDistance = 2;
+
+        var newVoxelContent = new VoxelBlock[VoxelSize, VoxelSize, VoxelSize];       
+        var worldGenerator = new WorldGenerator(_worldSeed);
+        
         for (var y = playerVoxel.IdVec.y + verticalRenderDistance; y > playerVoxel.IdVec.y - verticalRenderDistance; y--)
         {
             for (var x = playerVoxel.IdVec.x - renderDistance; x < playerVoxel.IdVec.x + renderDistance; x++)
@@ -118,54 +122,10 @@ public class VoxelRoot : MonoBehaviour
 
 
 
-    private IEnumerator GenerateVoxelContent(string worldSeed)
-    {
-        var worldGenerator = new WorldGenerator(worldSeed);
-        var calc = new VoxelCoordinateCalculator(VoxelSize);
-        var stopWatch = new System.Diagnostics.Stopwatch();
-
-        
-
-        while (true)
-        {
-            stopWatch.Start();
-
-            var renderDistance = 10;
-            var verticalRenderDistance = 2;
-
-            var playerVoxel = calc.CalculateId(Player.transform.position);
-            
-            for (var y = playerVoxel.IdVec.y + verticalRenderDistance; y > playerVoxel.IdVec.y - verticalRenderDistance; y--)
-            {
-                for (var x = playerVoxel.IdVec.x - renderDistance; x < playerVoxel.IdVec.x + renderDistance; x++)
-                {
-                    for (var z = playerVoxel.IdVec.z - renderDistance; z < playerVoxel.IdVec.z + renderDistance; z++)
-                    {
-                        stopWatch.Restart();
-
-                        //CreateVoxel(playerVoxel, x, y, z, renderDistance, calc, newVoxelContent, worldGenerator);
-
-                        CurrentLoadedArea++;
-                    }
-                }
-            }
-
-            stopWatch.Stop();
-
-            yield return null;
-
-            stopWatch.Restart();
-
-            
-        }
-    }
+    
 
     void CreateVoxel(VoxelCoordinate voxelId, VoxelCoordinateCalculator calc, VoxelBlock[,,] newVoxelContent, WorldGenerator worldGenerator)
     {
-        //var voxelPosDiff = (playerVoxel.IdVec - new Vector3(x, playerVoxel.IdVec.y, z)).magnitude;
-        //if (voxelPosDiff > renderDistance) return;
-
-        //var voxelId = calc.GetVoxelForId(x, y, z);
         var voxelGroup = GetOrCreateVoxelGroup(voxelId);
 
         if (voxelGroup.IsLoaded) return;
@@ -189,48 +149,6 @@ public class VoxelRoot : MonoBehaviour
 
         voxelGroup.LoadVoxelContent(newVoxelContent);
         voxelGroup.RecalculateMesh();
-    }
-
-    private IEnumerator GenerateVoxelGeometry()
-    {
-        var stopWatch = new System.Diagnostics.Stopwatch();
-
-        while (true)
-        {
-            stopWatch.Restart();
-            Debug.Log("Recalculating");
-
-            var calculationStopWatch = new System.Diagnostics.Stopwatch();
-
-            foreach (var group in VoxelGroups.Where(x => x.Value.MeshChanged).ToArray())
-            {
-                calculationStopWatch.Restart();
-                group.Value.RecalculateMesh();
-                calculationStopWatch.Stop();
-            }
-
-            //var groups = VoxelGroups.ToArray();
-            //for (var i = 0; i < groups.Count(); i += 5)
-            //{
-            //    var groupsToRegen = groups.Skip(i).Take(5).ToArray();
-            //    foreach(var group in groupsToRegen)
-            //    {
-            //        group.Value.RecalculateMesh();
-            //    }
-            //    yield return null;
-            //}
-
-            Debug.Log("Finished recalculating " + stopWatch.Elapsed);
-
-            if (!_initialLoadComplete)
-            {
-                OnMapLoadComplete?.Invoke();
-            }
-
-            _initialLoadComplete = true;
-
-            yield return null;
-        }
     }
 
     private void Update()
